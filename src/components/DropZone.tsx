@@ -26,22 +26,22 @@ export function DropZone({
   // Empty state inside Finder window
   return (
     <div
-      className="flex items-center justify-center px-6 py-16"
-      style={{ minHeight: '60vh' }}
+      className="flex items-center justify-center px-4 sm:px-6 py-10 sm:py-16"
+      style={{ minHeight: '50vh' }}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
       <motion.div
-        className="flex flex-col items-center gap-4 text-center"
+        className="flex flex-col items-center gap-3 sm:gap-4 text-center"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
       >
         {/* Upload icon */}
         <motion.div
-          className={`flex items-center justify-center w-20 h-20 rounded-2xl transition-all duration-300 ${
+          className={`flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl transition-all duration-300 ${
             isDragging
               ? 'bg-pink/12 text-pink scale-110'
               : 'bg-[#f6f6f6] text-text-light'
@@ -52,7 +52,7 @@ export function DropZone({
           }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-          <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
+          <svg width="32" height="32" viewBox="0 0 48 48" fill="none" className="sm:w-9 sm:h-9">
             <path
               d="M24 32V12M24 12L16 20M24 12L32 20"
               stroke="currentColor"
@@ -71,10 +71,10 @@ export function DropZone({
         </motion.div>
 
         <div>
-          <h2 className="font-serif text-2xl font-extrabold text-text-dark tracking-tight mb-1">
+          <h2 className="font-serif text-xl sm:text-2xl font-extrabold text-text-dark tracking-tight mb-1">
             {isDragging ? 'Release to add' : 'Drop files here'}
           </h2>
-          <p className="text-text-mid text-[14px] max-w-xs leading-relaxed">
+          <p className="text-text-mid text-[13px] sm:text-[14px] max-w-xs leading-relaxed">
             {isDragging
               ? 'Your files are ready for transformation'
               : 'Images, documents, audio, video, data \u2014 all formats welcome'}
@@ -82,7 +82,7 @@ export function DropZone({
         </div>
 
         <motion.button
-          className="inline-flex items-center gap-2 mt-1 px-6 py-2.5 text-[13px] font-bold text-white bg-pink rounded-xl cursor-pointer shadow-[0_3px_16px_rgba(244,114,182,0.25)] hover:-translate-y-0.5 hover:shadow-[0_5px_22px_rgba(244,114,182,0.35)] transition-all border-none"
+          className="inline-flex items-center gap-2 mt-1 px-5 sm:px-6 py-2 sm:py-2.5 text-[13px] font-bold text-white bg-pink rounded-xl cursor-pointer shadow-[0_3px_16px_rgba(244,114,182,0.25)] hover:-translate-y-0.5 hover:shadow-[0_5px_22px_rgba(244,114,182,0.35)] active:scale-[0.97] transition-all border-none"
           onClick={onBrowse}
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
