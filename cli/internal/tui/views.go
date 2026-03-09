@@ -11,178 +11,151 @@ import (
 	"github.com/noauf/transmute-cli/internal/theme"
 )
 
-// Fixed column widths (matching the web simulation layout).
+// Fixed column widths for the right-side columns.
 const (
-	colCursor = 3  // "> " or "  "
-	colCheck  = 3  // "● " or "○ "
 	colSize   = 10 // right-aligned file size
 	colFormat = 14 // "< webp >" centered
 	colStatus = 14 // "idle" / "converting..." / "done"
-	colGap    = 2  // gap between columns
 )
 
-// bg renders spacing text with the cream background.
-func bg(s string) string {
-	return theme.BgStyle.Render(s)
-}
-
-// wbg renders spacing text with the warm highlight background.
-func wbg(s string) string {
-	return theme.WarmBgStyle.Render(s)
-}
-
-// nameWidth calculates the flexible Name column width.
+// nameWidth returns the flexible Name column width (everything left of Size).
 func nameWidth(termW int) int {
-	fixed := colCursor + colCheck + colSize + colFormat + colStatus + colGap*3
-	w := termW - fixed
+	// prefix(6) + name(flex) + gap(2) + size(10) + gap(2) + fmt(14) + gap(2) + status(14)
+	w := termW - 6 - 2 - colSize - 2 - colFormat - 2 - colStatus
 	if w < 20 {
 		w = 20
 	}
 	return w
 }
 
-// pad pads a line to full width with cream background.
-func (m Model) pad(line string) string {
-	return theme.PadLine(line, m.width)
+// bg wraps a line so it fills the full terminal width with cream bg.
+func (m Model) bg(line string) string {
+	return lipgloss.Place(m.width, 1, lipgloss.Left, lipgloss.Top, line,
+		lipgloss.WithWhitespaceStyle(theme.ScreenStyle))
 }
 
-// padWarm pads a line to full width with the warm (highlighted) background.
-func (m Model) padWarm(line string) string {
-	return theme.PadLineWithBg(line, m.width, theme.Warm)
+// wbg wraps a line so it fills the full terminal width with warm bg (cursor row).
+func (m Model) wbg(line string) string {
+	return lipgloss.Place(m.width, 1, lipgloss.Left, lipgloss.Top, line,
+		lipgloss.WithWhitespaceStyle(theme.WarmWhitespace))
 }
 
-// blank returns a full-width blank line with cream background.
-func (m Model) blank() string {
-	return theme.BgStyle.Render(strings.Repeat(" ", m.width))
-}
-
-// View renders the entire TUI, filling the full terminal.
+// View renders the full-screen TUI.
 func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
 	}
 
-	// We build an array of pre-padded lines (each already full-width with bg).
-	var lines []string
+	var top []string    // content at the top
+	var bottom []string // content pinned to the bottom
 
-	// Title bar (1 line)
-	lines = append(lines, m.pad(m.renderTitleBar()))
-
-	// Divider (1 line)
-	lines = append(lines, m.pad(m.renderDivider()))
-
-	// State-specific content
-	var bottomLines []string // lines that go at the very bottom
+	top = append(top, m.bg(m.renderTitleBar()))
+	top = append(top, m.bg(m.renderDivider()))
 
 	switch m.state {
 	case stateFileList:
-		// Column header
-		lines = append(lines, m.pad(m.renderColumnHeader()))
+		top = append(top, m.bg(""))
+		top = append(top, m.bg(m.renderColumnHeader()))
+		top = append(top, m.bg(""))
+		top = append(top, m.renderFileRows()...) // rows already have bg/wbg applied
 
-		// File rows
-		fileLines := m.renderFileRows()
-		lines = append(lines, fileLines...)
-
-		// Bottom section: divider + bottom bar (pinned to bottom)
-		bottomLines = append(bottomLines, m.pad(m.renderDivider()))
-		bottomLines = append(bottomLines, m.pad(m.renderBottomBar()))
+		bottom = append(bottom, m.bg(m.renderDivider()))
+		bottom = append(bottom, m.bg(m.renderBottomBar()))
 
 	case stateConverting:
-		for _, l := range strings.Split(m.renderConverting(), "\n") {
-			lines = append(lines, m.pad(l))
+		for _, line := range strings.Split(m.renderConverting(), "\n") {
+			top = append(top, m.bg(line))
 		}
 
 	case stateResults:
-		for _, l := range strings.Split(m.renderResults(), "\n") {
-			lines = append(lines, m.pad(l))
+		for _, line := range strings.Split(m.renderResults(), "\n") {
+			top = append(top, m.bg(line))
 		}
-		bottomLines = append(bottomLines, m.pad(m.renderDivider()))
-		bottomLines = append(bottomLines, m.pad(m.renderResultsFooter()))
+		bottom = append(bottom, m.bg(m.renderDivider()))
+		bottom = append(bottom, m.bg(m.renderResultsFooter()))
 	}
 
-	// Help overlay (if visible, goes right after content)
 	if m.showHelp {
-		for _, l := range strings.Split(m.renderHelp(), "\n") {
-			lines = append(lines, m.pad(l))
+		for _, line := range strings.Split(m.renderHelp(), "\n") {
+			top = append(top, m.bg(line))
 		}
 	}
 
-	// Calculate how many blank lines we need between content and bottom bar
-	totalUsed := len(lines) + len(bottomLines)
-	remaining := m.height - totalUsed
-	for i := 0; i < remaining; i++ {
-		lines = append(lines, m.blank())
+	// Assemble: top lines + blank fill + bottom lines
+	totalUsed := len(top) + len(bottom)
+	fill := m.height - totalUsed
+	if fill < 0 {
+		fill = 0
 	}
 
-	// Append bottom bar lines
-	lines = append(lines, bottomLines...)
+	blankLine := m.bg("")
 
-	// Truncate if somehow we exceed terminal height
-	if len(lines) > m.height {
-		lines = lines[:m.height]
+	var all []string
+	all = append(all, top...)
+	for i := 0; i < fill; i++ {
+		all = append(all, blankLine)
+	}
+	all = append(all, bottom...)
+
+	// Truncate to terminal height
+	if len(all) > m.height {
+		all = all[:m.height]
 	}
 
-	return strings.Join(lines, "\n")
+	return strings.Join(all, "\n")
 }
 
 // ─── Title bar ───────────────────────────────────────────────
 
 func (m Model) renderTitleBar() string {
-	title := theme.Logo.Render("transmute")
-	fileCount := fmt.Sprintf("%d files", len(m.files))
+	title := theme.Bg(theme.Logo).Render("transmute")
 	selected := 0
 	for _, f := range m.files {
 		if f.selected {
 			selected++
 		}
 	}
-	info := theme.Breadcrumb.Render(fmt.Sprintf("  %s \u00B7 %d selected", fileCount, selected))
+	info := theme.Bg(theme.Breadcrumb).Render(fmt.Sprintf("  %d files · %d selected", len(m.files), selected))
 
-	left := bg("  ") + title + info
-	rightContent := theme.Help.Render("? help") + bg("  ")
-	gap := m.width - lipgloss.Width(left) - lipgloss.Width(rightContent)
+	left := theme.BgStr("  ") + title + info
+	right := theme.Bg(theme.Help).Render("? help") + theme.BgStr("  ")
+	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 {
 		gap = 1
 	}
-
-	return left + bg(strings.Repeat(" ", gap)) + rightContent
+	return left + theme.BgStr(strings.Repeat(" ", gap)) + right
 }
 
 // ─── Divider ─────────────────────────────────────────────────
 
 func (m Model) renderDivider() string {
-	w := m.width - 4 // 2 char padding each side
+	w := m.width - 4
 	if w < 10 {
 		w = 10
 	}
-	return bg("  ") + theme.Divider.Render(strings.Repeat("\u2500", w)) + bg("  ")
+	return theme.BgStr("  ") + theme.Bg(theme.Divider).Render(strings.Repeat("─", w)) + theme.BgStr("  ")
 }
 
 // ─── Column header ───────────────────────────────────────────
 
 func (m Model) renderColumnHeader() string {
 	nw := nameWidth(m.width)
+	prefix := theme.BgStr(strings.Repeat(" ", 6)) // cursor(3) + check(3)
 
-	nameHdr := theme.Breadcrumb.Copy().Width(colCursor + colCheck + nw).Render(
-		strings.Repeat(" ", colCursor+colCheck) + "Name")
-	sizeHdr := theme.Breadcrumb.Copy().Width(colSize).Align(lipgloss.Right).Render("Size")
-	fmtHdr := theme.Breadcrumb.Copy().Width(colFormat).Align(lipgloss.Center).Render("Convert to")
-	statHdr := theme.Breadcrumb.Copy().Width(colStatus).Align(lipgloss.Center).Render("Status")
+	nameHdr := theme.Bg(theme.Breadcrumb).Copy().Width(nw).Render("Name")
+	sizeHdr := theme.Bg(theme.Breadcrumb).Copy().Width(colSize).Align(lipgloss.Right).Render("Size")
+	fmtHdr := theme.Bg(theme.Breadcrumb).Copy().Width(colFormat).Align(lipgloss.Center).Render("Convert to")
+	statHdr := theme.Bg(theme.Breadcrumb).Copy().Width(colStatus).Align(lipgloss.Center).Render("Status")
 
-	return nameHdr + bg("  ") + sizeHdr + bg("  ") + fmtHdr + bg("  ") + statHdr
+	return prefix + nameHdr + theme.BgStr("  ") + sizeHdr + theme.BgStr("  ") + fmtHdr + theme.BgStr("  ") + statHdr
 }
 
 // ─── File rows ───────────────────────────────────────────────
 
-// renderFileRows returns already-padded lines for the file list area.
 func (m Model) renderFileRows() []string {
 	if len(m.files) == 0 {
-		empty := lipgloss.NewStyle().
-			Foreground(theme.Light).
-			Background(theme.ScreenBg).
-			Italic(true).
-			Render("    No supported files found. Pass file paths or glob patterns as arguments.")
-		return []string{m.blank(), m.pad(empty), m.blank()}
+		msg := theme.Bg(theme.Help).Render("  No supported files found. Pass file paths or glob patterns as arguments.")
+		return []string{m.bg(""), m.bg(msg), m.bg("")}
 	}
 
 	maxVisible := m.maxVisibleFiles()
@@ -193,20 +166,12 @@ func (m Model) renderFileRows() []string {
 
 	var rows []string
 	for i := m.scroll; i < end; i++ {
-		isCursor := i == m.cursor
-		row := m.renderFileRow(i)
-		if isCursor {
-			rows = append(rows, m.padWarm(row))
-		} else {
-			rows = append(rows, m.pad(row))
-		}
+		rows = append(rows, m.renderFileRow(i))
 	}
 
-	// Scrollbar indicator (if needed)
 	if len(m.files) > maxVisible {
-		scrollInfo := theme.Help.Render(fmt.Sprintf(
-			"  showing %d\u2013%d of %d", m.scroll+1, end, len(m.files)))
-		rows = append(rows, m.pad(scrollInfo))
+		rows = append(rows, m.bg(theme.Bg(theme.Help).Render(fmt.Sprintf(
+			"  showing %d–%d of %d", m.scroll+1, end, len(m.files)))))
 	}
 
 	return rows
@@ -217,44 +182,34 @@ func (m Model) renderFileRow(idx int) string {
 	isCursor := idx == m.cursor
 	nw := nameWidth(m.width)
 
-	// Choose background helper based on whether this is the cursor row
-	sp := bg
+	// Pick background helpers based on cursor state
+	bgStr := theme.BgStr
+	bgS := theme.Bg
+	lineBg := m.bg
 	if isCursor {
-		sp = wbg
+		bgStr = theme.WBgStr
+		bgS = theme.WBg
+		lineBg = m.wbg
 	}
 
-	// ── Cursor indicator ──
-	cursor := sp("   ")
+	// Cursor indicator
+	cursor := bgStr("   ")
 	if isCursor {
-		cursor = sp(" ") + theme.Selected.Copy().Background(theme.Warm).Render(">") + sp(" ")
+		cursor = bgStr(" ") + bgS(theme.Selected).Render(">") + bgStr(" ")
 	}
 
-	// ── Selection dot ──
+	// Selection dot
 	var check string
 	if f.selected {
-		if isCursor {
-			check = theme.StatusDone.Copy().Background(theme.Warm).Render("\u25CF") + sp(" ")
-		} else {
-			check = theme.StatusDone.Render("\u25CF") + sp(" ")
-		}
+		check = bgS(theme.StatusDone).Render("●") + bgStr("  ")
 	} else {
-		if isCursor {
-			check = theme.Breadcrumb.Copy().Background(theme.Warm).Render("\u25CB") + sp(" ")
-		} else {
-			check = theme.Breadcrumb.Render("\u25CB") + sp(" ")
-		}
+		check = bgS(theme.Breadcrumb).Render("○") + bgStr("  ")
 	}
 
-	// ── Icon + ext badge + filename ──
+	// Icon + ext badge + filename
 	icon := detect.CategoryIcon(f.category)
 	catColor := theme.CategoryColor(string(f.category))
-
-	var extBadge string
-	if isCursor {
-		extBadge = theme.ExtBadge(catColor).Background(theme.Warm).Render(strings.ToUpper(f.ext))
-	} else {
-		extBadge = theme.ExtBadge(catColor).Render(strings.ToUpper(f.ext))
-	}
+	extBadge := bgS(theme.ExtBadge(catColor)).Render(strings.ToUpper(f.ext))
 
 	nameText := f.name
 	maxName := nw - 10
@@ -265,104 +220,59 @@ func (m Model) renderFileRow(idx int) string {
 		nameText = nameText[:maxName-3] + "..."
 	}
 
-	var nameStyle lipgloss.Style
+	nameStyle := theme.FileName
 	if isCursor {
-		nameStyle = theme.FileName.Copy().Background(theme.Warm).Bold(true)
-	} else {
-		nameStyle = theme.FileName
+		nameStyle = nameStyle.Copy().Bold(true)
 	}
 
-	nameContent := sp(icon+" ") + extBadge + sp(" ") + nameStyle.Render(nameText)
-	var nameCellStyle lipgloss.Style
-	if isCursor {
-		nameCellStyle = lipgloss.NewStyle().Width(nw).MaxWidth(nw).Background(theme.Warm)
-	} else {
-		nameCellStyle = lipgloss.NewStyle().Width(nw).MaxWidth(nw).Background(theme.ScreenBg)
-	}
-	nameCell := nameCellStyle.Render(nameContent)
+	nameContent := bgStr(icon+" ") + extBadge + bgStr(" ") + bgS(nameStyle).Render(nameText)
+	nameCell := bgS(lipgloss.NewStyle()).Copy().Width(nw).MaxWidth(nw).Render(nameContent)
 
-	// ── Size ──
-	var sizeCell string
-	if isCursor {
-		sizeCell = theme.FileSize.Copy().Background(theme.Warm).Width(colSize).Align(lipgloss.Right).Render(formatSize(f.size))
-	} else {
-		sizeCell = theme.FileSize.Copy().Width(colSize).Align(lipgloss.Right).Render(formatSize(f.size))
-	}
+	// Size
+	sizeCell := bgS(theme.FileSize).Copy().Width(colSize).Align(lipgloss.Right).Render(formatSize(f.size))
 
-	// ── Format selector ──
-	fmtStr := renderFormatSelector(f, isCursor)
-	var fmtCell string
-	if isCursor {
-		fmtCell = lipgloss.NewStyle().Width(colFormat).Align(lipgloss.Center).Background(theme.Warm).Render(fmtStr)
-	} else {
-		fmtCell = lipgloss.NewStyle().Width(colFormat).Align(lipgloss.Center).Background(theme.ScreenBg).Render(fmtStr)
-	}
+	// Format selector
+	fmtStr := renderFormatSelector(f, isCursor, bgStr, bgS)
+	fmtCell := bgS(lipgloss.NewStyle()).Copy().Width(colFormat).Align(lipgloss.Center).Render(fmtStr)
 
-	// ── Status ──
+	// Status
 	var statusStr string
 	switch f.status {
 	case "idle":
-		if isCursor {
-			statusStr = theme.StatusIdle.Copy().Background(theme.Warm).Render("idle")
-		} else {
-			statusStr = theme.StatusIdle.Render("idle")
-		}
+		statusStr = bgS(theme.StatusIdle).Render("idle")
 	case "converting":
-		if isCursor {
-			statusStr = theme.StatusConverting.Copy().Background(theme.Warm).Render("converting...")
-		} else {
-			statusStr = theme.StatusConverting.Render("converting...")
-		}
+		statusStr = bgS(theme.StatusConverting).Render("converting...")
 	case "done":
-		if isCursor {
-			statusStr = theme.StatusDone.Copy().Background(theme.Warm).Render("done")
-		} else {
-			statusStr = theme.StatusDone.Render("done")
-		}
+		statusStr = bgS(theme.StatusDone).Render("done")
 	case "error":
-		if isCursor {
-			statusStr = theme.StatusError.Copy().Background(theme.Warm).Render("error")
-		} else {
-			statusStr = theme.StatusError.Render("error")
-		}
+		statusStr = bgS(theme.StatusError).Render("error")
 	}
-	var statusCell string
-	if isCursor {
-		statusCell = lipgloss.NewStyle().Width(colStatus).Align(lipgloss.Center).Background(theme.Warm).Render(statusStr)
-	} else {
-		statusCell = lipgloss.NewStyle().Width(colStatus).Align(lipgloss.Center).Background(theme.ScreenBg).Render(statusStr)
-	}
+	statusCell := bgS(lipgloss.NewStyle()).Copy().Width(colStatus).Align(lipgloss.Center).Render(statusStr)
 
-	return cursor + check + nameCell + sp("  ") + sizeCell + sp("  ") + fmtCell + sp("  ") + statusCell
+	row := cursor + check + nameCell + bgStr("  ") + sizeCell + bgStr("  ") + fmtCell + bgStr("  ") + statusCell
+
+	return lineBg(row)
 }
 
-func renderFormatSelector(f fileEntry, active bool) string {
+func renderFormatSelector(f fileEntry, active bool, bgStr func(string) string, bgS func(lipgloss.Style) lipgloss.Style) string {
 	if len(f.formats) == 0 {
-		if active {
-			return theme.Help.Copy().Background(theme.Warm).Render("\u2014")
-		}
-		return theme.Help.Render("\u2014")
+		return bgS(theme.Help).Render("—")
 	}
 
-	sp := bg
-	if active {
-		sp = wbg
-	}
-
-	left := sp("  ")
-	right := sp("  ")
+	left := bgStr("  ")
+	right := bgStr("  ")
 	if active && f.formatIdx > 0 {
-		left = theme.Help.Copy().Background(theme.Warm).Render("< ")
+		left = bgS(theme.Help).Render("< ")
 	}
 	if active && f.formatIdx < len(f.formats)-1 {
-		right = theme.Help.Copy().Background(theme.Warm).Render(" >")
+		right = bgS(theme.Help).Render(" >")
 	}
 
 	var middle string
 	if active {
-		middle = theme.Selected.Copy().Background(theme.Warm).Render(f.targetFormat)
+		middle = bgS(theme.Selected).Render(f.targetFormat)
 	} else {
-		middle = theme.Unselected.Render(f.targetFormat)
+		middle = bgS(theme.Unselected).Render(f.targetFormat)
 	}
 
 	return left + middle + right
@@ -380,19 +290,29 @@ func (m Model) renderBottomBar() string {
 
 	var left string
 	if selected > 0 {
-		left = bg("  ") + theme.ButtonPrimary.Render(fmt.Sprintf(" Convert %d files [c] ", selected))
+		left = theme.BgStr("  ") + theme.ButtonPrimary.Render(fmt.Sprintf(" Convert %d files [c] ", selected))
 	} else {
-		left = bg("  ") + theme.Help.Render("Select files to convert")
+		left = theme.BgStr("  ") + theme.Bg(theme.Help).Render("Select files to convert")
 	}
 
-	right := theme.Help.Render("up/down navigate  left/right format  space select  a all  q quit") + bg("  ")
+	// Adaptive keybindings: full or compact based on available space
+	leftW := lipgloss.Width(left)
+	fullHelp := "up/down navigate  left/right format  space select  a all  q quit"
+	shortHelp := "↑↓ nav  ←→ fmt  space sel  a all  q quit"
+
+	helpText := fullHelp
+	rightW := len(helpText) + 4 // 2 padding each side
+	if leftW+rightW > m.width {
+		helpText = shortHelp
+	}
+
+	right := theme.Bg(theme.Help).Render(helpText) + theme.BgStr("  ")
 
 	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 {
 		gap = 1
 	}
-
-	return left + bg(strings.Repeat(" ", gap)) + right
+	return left + theme.BgStr(strings.Repeat(" ", gap)) + right
 }
 
 // ─── Converting view ─────────────────────────────────────────
@@ -400,10 +320,9 @@ func (m Model) renderBottomBar() string {
 func (m Model) renderConverting() string {
 	elapsed := time.Since(m.startTime).Round(time.Millisecond)
 
-	header := theme.StatusConverting.Render(fmt.Sprintf(
+	header := theme.Bg(theme.StatusConverting).Render(fmt.Sprintf(
 		"  Converting... %d/%d  (%s)", m.converted, m.totalToConv, elapsed))
 
-	// Progress bar
 	barWidth := m.width - 8
 	if barWidth < 20 {
 		barWidth = 20
@@ -414,27 +333,21 @@ func (m Model) renderConverting() string {
 		filled = barWidth
 	}
 
-	bar := bg("  ") +
-		theme.ProgressFilled.Render(strings.Repeat("\u2588", filled)) +
-		theme.ProgressEmpty.Render(strings.Repeat("\u2591", barWidth-filled))
+	bar := theme.BgStr("  ") +
+		theme.Bg(theme.ProgressFilled).Render(strings.Repeat("█", filled)) +
+		theme.Bg(theme.ProgressEmpty).Render(strings.Repeat("░", barWidth-filled))
 
-	// Show current files being converted
 	var current []string
 	for _, f := range m.files {
 		if f.status == "converting" {
-			current = append(current, fmt.Sprintf("  %s \u2192 %s", f.name, f.targetFormat))
+			current = append(current, fmt.Sprintf("  %s → %s", f.name, f.targetFormat))
 		}
 	}
-	currentStr := theme.Help.Render(strings.Join(current, "\n"))
+	currentStr := theme.Bg(theme.Help).Render(strings.Join(current, "\n"))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
-		"",
-		header,
-		bar,
-		"",
-		currentStr,
-		"",
-		theme.Help.Render("  Press q to cancel"),
+		"", header, bar, "", currentStr, "",
+		theme.Bg(theme.Help).Render("  Press q to cancel"),
 	)
 }
 
@@ -457,31 +370,38 @@ func (m Model) renderResults() string {
 	}
 
 	elapsed := time.Since(m.startTime).Round(time.Millisecond)
-	summary := theme.StatusDone.Render(fmt.Sprintf(
+	summary := theme.Bg(theme.StatusDone).Render(fmt.Sprintf(
 		"  Conversion complete! %d succeeded", successCount))
 	if errorCount > 0 {
-		summary += theme.StatusError.Render(fmt.Sprintf(", %d failed", errorCount))
+		summary += theme.Bg(theme.StatusError).Render(fmt.Sprintf(", %d failed", errorCount))
 	}
-	summary += theme.Help.Render(fmt.Sprintf("  (%s)", elapsed))
+	summary += theme.Bg(theme.Help).Render(fmt.Sprintf("  (%s)", elapsed))
 
 	rows = append(rows, "", summary, "")
 
-	// List results
 	for _, f := range m.files {
 		if !f.selected {
 			continue
 		}
+		icon := detect.CategoryIcon(f.category)
+		catColor := theme.CategoryColor(string(f.category))
+		extBadge := theme.Bg(theme.ExtBadge(catColor)).Render(strings.ToUpper(f.ext))
+
 		switch f.status {
 		case "done":
-			rows = append(rows, theme.StatusDone.Render("  \u2713 ")+
-				theme.FileName.Render(f.name)+
-				theme.Help.Render(" \u2192 ")+
-				theme.BreadcrumbActive.Render(f.outputPath))
+			rows = append(rows,
+				theme.BgStr("  ")+theme.Bg(theme.StatusDone).Render("✓")+" "+
+					theme.BgStr(icon+" ")+extBadge+theme.BgStr(" ")+
+					theme.Bg(theme.FileName).Render(f.name)+
+					theme.Bg(theme.Help).Render(" → ")+
+					theme.Bg(theme.BreadcrumbActive).Render(f.outputPath))
 		case "error":
-			rows = append(rows, theme.StatusError.Render("  \u2717 ")+
-				theme.FileName.Render(f.name)+
-				theme.Help.Render(" \u2014 ")+
-				theme.StatusError.Render(f.error))
+			rows = append(rows,
+				theme.BgStr("  ")+theme.Bg(theme.StatusError).Render("✗")+" "+
+					theme.BgStr(icon+" ")+extBadge+theme.BgStr(" ")+
+					theme.Bg(theme.FileName).Render(f.name)+
+					theme.Bg(theme.Help).Render(" — ")+
+					theme.Bg(theme.StatusError).Render(f.error))
 		}
 	}
 
@@ -489,7 +409,7 @@ func (m Model) renderResults() string {
 }
 
 func (m Model) renderResultsFooter() string {
-	return theme.Help.Render("  Press enter to exit  |  esc to convert more")
+	return theme.Bg(theme.Help).Render("  Press enter to exit  |  esc to convert more")
 }
 
 // ─── Help overlay ────────────────────────────────────────────
@@ -511,13 +431,13 @@ func (m Model) renderHelp() string {
 
 	var lines []string
 	lines = append(lines, "")
-	lines = append(lines, theme.BreadcrumbActive.Render("  Keyboard Shortcuts"))
+	lines = append(lines, theme.Bg(theme.BreadcrumbActive).Render("  Keyboard Shortcuts"))
 	lines = append(lines, "")
 
 	for _, k := range keys {
-		lines = append(lines, bg("  ")+
-			theme.Selected.Copy().Width(18).Render(k.key)+bg("  ")+
-			theme.Help.Render(k.desc))
+		lines = append(lines, fmt.Sprintf("  %s  %s",
+			theme.Bg(theme.Selected).Copy().Width(18).Render(k.key),
+			theme.Bg(theme.Help).Render(k.desc)))
 	}
 	lines = append(lines, "")
 
