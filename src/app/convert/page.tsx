@@ -48,9 +48,7 @@ export default function ConvertPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-cream/80 backdrop-blur-xl border-b border-border-soft">
         <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <div className="w-8 h-8 rounded-[10px] bg-pink flex items-center justify-center text-white font-serif font-black text-sm">
-            T
-          </div>
+          <img src="/logo.png" alt="Transmute" className="w-8 h-8 rounded-[10px]" />
           <span className="font-serif font-extrabold text-xl tracking-tight text-text-dark">Transmute</span>
         </Link>
         <span className="font-mono text-[11px] text-text-light px-2.5 py-1 border border-border-soft rounded-full tracking-wide">
