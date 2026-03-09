@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -51,41 +51,19 @@ const flowSteps = [
   { inputIcon: '\u{1F3B5}', inputLabel: '.FLAC', outputIcon: '\u{1F3A7}', outputLabel: '.MP3' },
 ];
 
-/* ─── Format Marquee Data ─── */
+/* ─── Terminal Simulation Data ─── */
 
-const marqueeRows = [
-  {
-    label: 'Images',
-    color: '#f472b6',
-    colorLight: 'rgba(244,114,182,0.08)',
-    formats: ['PNG', 'JPG', 'WebP', 'GIF', 'AVIF', 'SVG', 'PSD', 'HEIC', 'BMP', 'TIFF', 'ICO'],
-    direction: 'left' as const,
-    speed: '35s',
-  },
-  {
-    label: 'Documents',
-    color: '#60a5fa',
-    colorLight: 'rgba(96,165,250,0.08)',
-    formats: ['PDF', 'DOCX', 'MD', 'HTML', 'TXT', 'RTF', 'PPTX', 'EPUB'],
-    direction: 'right' as const,
-    speed: '30s',
-  },
-  {
-    label: 'Audio & Video',
-    color: '#a78bfa',
-    colorLight: 'rgba(167,139,250,0.08)',
-    formats: ['MP3', 'WAV', 'OGG', 'FLAC', 'AAC', 'M4A', 'MP4', 'WebM', 'AVI', 'MOV', 'MKV'],
-    direction: 'left' as const,
-    speed: '38s',
-  },
-  {
-    label: 'Data & Fonts',
-    color: '#34d399',
-    colorLight: 'rgba(52,211,153,0.08)',
-    formats: ['CSV', 'JSON', 'XML', 'YAML', 'XLSX', 'TSV', 'TOML', 'INI', 'SQL', 'NDJSON', 'TTF', 'OTF', 'WOFF', 'WOFF2'],
-    direction: 'right' as const,
-    speed: '40s',
-  },
+const terminalCommands = [
+  { cmd: 'transmute photo.heic --to webp', output: '  \u2713 photo.webp (2.4 MB \u2192 680 KB)', color: '#f472b6', time: 1800 },
+  { cmd: 'transmute report.docx --to pdf', output: '  \u2713 report.pdf (formatting preserved)', color: '#60a5fa', time: 2200 },
+  { cmd: 'transmute song.flac --to mp3 --quality 320k', output: '  \u2713 song.mp3 (48 MB \u2192 9.2 MB)', color: '#a78bfa', time: 2800 },
+  { cmd: 'transmute data.csv --to json', output: '  \u2713 data.json (2,847 rows parsed)', color: '#34d399', time: 1400 },
+  { cmd: 'transmute clip.mov --to mp4', output: '  \u2713 clip.mp4 (H.264, browser-native)', color: '#fb923c', time: 3200 },
+  { cmd: 'transmute design.psd --to png', output: '  \u2713 design.png (composite layer)', color: '#f472b6', time: 1600 },
+  { cmd: 'transmute book.epub --to pdf', output: '  \u2713 book.pdf (chapters preserved)', color: '#60a5fa', time: 2000 },
+  { cmd: 'transmute font.ttf --to woff2', output: '  \u2713 font.woff2 (compressed 62%)', color: '#34d399', time: 1200 },
+  { cmd: 'transmute slides.pptx --to html', output: '  \u2713 slides.html (12 slides)', color: '#a78bfa', time: 2400 },
+  { cmd: 'transmute sheet.xlsx --to csv', output: '  \u2713 sheet.csv (3 sheets merged)', color: '#34d399', time: 1500 },
 ];
 
 /* ─── Animation Variants ─── */
@@ -332,6 +310,172 @@ function ConversionFlow() {
   );
 }
 
+/* ─── Terminal Simulation Component ─── */
+
+interface TerminalLine {
+  type: 'prompt' | 'output' | 'blank';
+  text: string;
+  color?: string;
+}
+
+function TerminalSimulation() {
+  const [lines, setLines] = useState<TerminalLine[]>([]);
+  const [currentTyping, setCurrentTyping] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const termRef = useRef<HTMLDivElement>(null);
+  const cmdIndexRef = useRef(0);
+  const runningRef = useRef(true);
+
+  const scrollToBottom = useCallback(() => {
+    if (termRef.current) {
+      termRef.current.scrollTop = termRef.current.scrollHeight;
+    }
+  }, []);
+
+  useEffect(() => {
+    runningRef.current = true;
+
+    const typeCommand = async (cmdObj: typeof terminalCommands[0]) => {
+      if (!runningRef.current) return;
+
+      // Type the command character by character
+      setIsTyping(true);
+      for (let i = 0; i <= cmdObj.cmd.length; i++) {
+        if (!runningRef.current) return;
+        setCurrentTyping(cmdObj.cmd.slice(0, i));
+        await new Promise((r) => setTimeout(r, 30 + Math.random() * 40));
+      }
+
+      // Brief pause after typing
+      await new Promise((r) => setTimeout(r, 300));
+      if (!runningRef.current) return;
+
+      // "Execute" — move command to lines, show output
+      setIsTyping(false);
+      setCurrentTyping('');
+      setLines((prev) => [
+        ...prev,
+        { type: 'prompt', text: cmdObj.cmd },
+        { type: 'output', text: cmdObj.output, color: cmdObj.color },
+      ]);
+      scrollToBottom();
+
+      // Pause before next command
+      await new Promise((r) => setTimeout(r, 1200));
+    };
+
+    const runLoop = async () => {
+      // Small initial delay
+      await new Promise((r) => setTimeout(r, 800));
+
+      while (runningRef.current) {
+        const cmd = terminalCommands[cmdIndexRef.current % terminalCommands.length];
+        await typeCommand(cmd);
+        cmdIndexRef.current++;
+
+        // After showing 6 commands, clear and start fresh to prevent infinite growth
+        if (cmdIndexRef.current % 6 === 0) {
+          await new Promise((r) => setTimeout(r, 600));
+          if (!runningRef.current) return;
+          setLines([]);
+        }
+      }
+    };
+
+    runLoop();
+
+    return () => {
+      runningRef.current = false;
+    };
+  }, [scrollToBottom]);
+
+  // Auto-scroll on new lines
+  useEffect(() => {
+    scrollToBottom();
+  }, [lines, currentTyping, scrollToBottom]);
+
+  return (
+    <div className="w-full max-w-[700px] mx-auto">
+      {/* Terminal window */}
+      <div className="rounded-xl overflow-hidden shadow-[0_8px_60px_rgba(0,0,0,0.25)] border border-white/[0.06]">
+        {/* Title bar */}
+        <div className="flex items-center gap-2 px-4 py-3 bg-[#1a1a2e]">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
+            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+          </div>
+          <span className="flex-1 text-center font-mono text-[11px] text-white/30 tracking-wider">
+            transmute
+          </span>
+        </div>
+
+        {/* Terminal body */}
+        <div
+          ref={termRef}
+          className="bg-[#0f0f1a] px-5 py-4 h-[320px] overflow-y-auto font-mono text-[13px] leading-[1.8] scroll-smooth"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {/* Welcome message */}
+          <div className="text-white/20 mb-2 select-none">
+            Transmute v1.0 {'\u2014'} 70+ formats, zero uploads
+          </div>
+
+          {/* Completed lines */}
+          {lines.map((line, i) => (
+            <div key={i}>
+              {line.type === 'prompt' ? (
+                <div className="flex items-start gap-0">
+                  <span className="text-[#34d399] select-none">{'>'}</span>
+                  <span className="text-white/80 ml-2">{line.text}</span>
+                </div>
+              ) : line.type === 'output' ? (
+                <div style={{ color: line.color }} className="opacity-90">
+                  {line.text}
+                </div>
+              ) : null}
+            </div>
+          ))}
+
+          {/* Currently typing line */}
+          {(isTyping || currentTyping) && (
+            <div className="flex items-start gap-0">
+              <span className="text-[#34d399] select-none">{'>'}</span>
+              <span className="text-white/80 ml-2">{currentTyping}</span>
+              <span className="inline-block w-[2px] h-[16px] bg-[#34d399] ml-[1px] translate-y-[2px] animate-pulse" />
+            </div>
+          )}
+
+          {/* Idle cursor */}
+          {!isTyping && !currentTyping && (
+            <div className="flex items-start gap-0">
+              <span className="text-[#34d399] select-none">{'>'}</span>
+              <span className="inline-block w-[2px] h-[16px] bg-[#34d399] ml-2 translate-y-[2px] animate-pulse" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Format count below terminal */}
+      <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
+        {[
+          { label: 'Images', count: 11, color: '#f472b6' },
+          { label: 'Documents', count: 8, color: '#60a5fa' },
+          { label: 'Audio/Video', count: 11, color: '#a78bfa' },
+          { label: 'Data/Fonts', count: 14, color: '#34d399' },
+        ].map((cat) => (
+          <div key={cat.label} className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
+            <span className="font-mono text-[11px] text-text-mid">
+              <strong style={{ color: cat.color }}>{cat.count}</strong> {cat.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 
 export default function LandingPage() {
@@ -440,13 +584,13 @@ export default function LandingPage() {
         <ConversionFlow />
       </section>
 
-      {/* ──── FEATURES — SCROLLING MARQUEE ──── */}
+      {/* ──── FEATURES — TERMINAL SIMULATION ──── */}
       <section
         id="features"
-        className="relative z-10 flex flex-col items-center gap-10 px-0 py-20 overflow-hidden"
+        className="relative z-10 flex flex-col items-center gap-10 px-6 py-20"
       >
         <motion.div
-          className="text-center flex flex-col items-center gap-3 px-6"
+          className="text-center flex flex-col items-center gap-3"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
@@ -459,70 +603,22 @@ export default function LandingPage() {
             Every format you need
           </h2>
           <p className="text-[17px] text-text-mid leading-relaxed max-w-[520px]">
-            70+ file formats across 5 categories, all converted instantly in your browser.
+            70+ file formats. Drop anything in, get anything out.
           </p>
         </motion.div>
 
-        {/* Marquee rows */}
-        <div className="w-full flex flex-col gap-3">
-          {marqueeRows.map((row, rowIndex) => (
-            <motion.div
-              key={row.label}
-              className="relative"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true, margin: '-20px' }}
-              transition={{ duration: 0.5, delay: rowIndex * 0.1 }}
-            >
-              {/* Category label — pinned left */}
-              <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-4 sm:pl-6">
-                <span
-                  className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-md backdrop-blur-sm"
-                  style={{
-                    color: row.color,
-                    background: `${row.colorLight}`,
-                    border: `1px solid ${row.color}18`,
-                  }}
-                >
-                  {row.label}
-                </span>
-              </div>
+        <motion.div
+          className="w-full max-w-[700px]"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] as const }}
+        >
+          <TerminalSimulation />
+        </motion.div>
 
-              {/* Fade edges */}
-              <div className="absolute left-0 top-0 bottom-0 w-28 sm:w-40 z-[5] pointer-events-none bg-[linear-gradient(to_right,var(--color-bg-cream)_30%,transparent)]" />
-              <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 z-[5] pointer-events-none bg-[linear-gradient(to_left,var(--color-bg-cream)_20%,transparent)]" />
-
-              {/* Scrolling track */}
-              <div className="overflow-hidden">
-                <div
-                  className={`flex items-center gap-3 w-max ${
-                    row.direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right'
-                  }`}
-                  style={{ '--marquee-duration': row.speed } as React.CSSProperties}
-                >
-                  {/* Duplicate the badges for seamless loop */}
-                  {[...row.formats, ...row.formats].map((fmt, i) => (
-                    <span
-                      key={`${fmt}-${i}`}
-                      className="inline-flex items-center px-4 py-2 font-mono text-[12px] font-bold rounded-xl border whitespace-nowrap select-none transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md cursor-default"
-                      style={{
-                        color: row.color,
-                        background: row.colorLight,
-                        borderColor: `${row.color}20`,
-                      }}
-                    >
-                      .{fmt}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Total count callout */}
         <motion.p
-          className="text-sm text-text-light font-mono tracking-wide px-6"
+          className="text-sm text-text-light font-mono tracking-wide"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
