@@ -71,6 +71,33 @@ body {
   animation: pulse-soft 2s ease-in-out infinite;
 }
 
+/* ---- Orbit animations for landing page constellation ---- */
+@keyframes orbit-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbit-med {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+.animate-orbit-slow {
+  animation: orbit-slow 60s linear infinite;
+}
+
+.animate-counter-orbit-slow {
+  animation: orbit-slow 60s linear infinite reverse;
+}
+
+.animate-orbit-med {
+  animation: orbit-med 40s linear infinite reverse;
+}
+
+.animate-counter-orbit-med {
+  animation: orbit-med 40s linear infinite;
+}
+
 /* ---- Dot pattern background ---- */
 .bg-dots {
   background-image: radial-gradient(circle, rgba(180, 140, 100, 0.12) 1px, transparent 1px);

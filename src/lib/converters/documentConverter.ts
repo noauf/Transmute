@@ -100,9 +100,11 @@ function escapeHtml(text: string): string {
 
 /* ============================================
    PDF text extraction via pdfjs-dist
+   With OCR fallback via Tesseract.js for
+   scanned/image-based PDFs
    ============================================ */
 
-async function pdfToText(file: File): Promise<string> {
+async function pdfToText(file: File, onProgress?: (progress: number) => void): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist');
 
   // Try loading the worker from CDN; if it fails, run without worker (main thread)
@@ -133,11 +135,61 @@ async function pdfToText(file: File): Promise<string> {
     }
   }
 
-  if (textParts.length === 0) {
-    return `[This PDF contains no extractable text — it may be image-based/scanned.]`;
+  // If we got text via normal extraction, return it
+  if (textParts.length > 0) {
+    return textParts.join('\n\n');
   }
 
-  return textParts.join('\n\n');
+  // ── OCR fallback for scanned/image-based PDFs ──
+  // Render each page to canvas, then run Tesseract.js OCR
+  onProgress?.(35);
+
+  try {
+    const Tesseract = await import('tesseract.js');
+    const ocrTextParts: string[] = [];
+
+    // Create a single worker for all pages
+    const worker = await Tesseract.createWorker('eng');
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2.0 }); // 2x for better OCR quality
+
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) continue;
+
+      await page.render({
+        canvas,
+        canvasContext: ctx,
+        viewport,
+      } as Parameters<typeof page.render>[0]).promise;
+
+      // Run OCR on the rendered page
+      const { data } = await worker.recognize(canvas);
+      if (data.text.trim()) {
+        ocrTextParts.push(data.text.trim());
+      }
+
+      // Update progress (spread OCR progress from 35% to 85%)
+      const pageProgress = 35 + ((i / pdf.numPages) * 50);
+      onProgress?.(Math.round(pageProgress));
+    }
+
+    await worker.terminate();
+
+    if (ocrTextParts.length > 0) {
+      return ocrTextParts.join('\n\n');
+    }
+  } catch (ocrError) {
+    console.warn('OCR fallback failed:', ocrError);
+    // Fall through to the error message below
+  }
+
+  return `[This PDF contains no extractable text and OCR could not recover text. It may contain only vector graphics or be empty.]`;
 }
 
 /* ============================================
@@ -145,8 +197,8 @@ async function pdfToText(file: File): Promise<string> {
    Extracts text per page, wraps in styled HTML
    ============================================ */
 
-async function pdfToHtml(file: File): Promise<string> {
-  const text = await pdfToText(file);
+async function pdfToHtml(file: File, onProgress?: (progress: number) => void): Promise<string> {
+  const text = await pdfToText(file, onProgress);
   const paragraphs = text.split(/\n\n+/).filter(Boolean);
   const bodyHtml = paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n');
   return wrapInStyledHtml(bodyHtml, file.name.replace(/\.pdf$/i, ''));
@@ -156,8 +208,8 @@ async function pdfToHtml(file: File): Promise<string> {
    PDF → Markdown
    ============================================ */
 
-async function pdfToMarkdown(file: File): Promise<string> {
-  const text = await pdfToText(file);
+async function pdfToMarkdown(file: File, onProgress?: (progress: number) => void): Promise<string> {
+  const text = await pdfToText(file, onProgress);
   // Attempt to detect headings (ALL CAPS lines, short lines)
   const lines = text.split('\n');
   const mdLines: string[] = [];
@@ -184,8 +236,8 @@ async function pdfToMarkdown(file: File): Promise<string> {
    Extracts text, builds DOCX using docx package
    ============================================ */
 
-async function pdfToDocx(file: File): Promise<Blob> {
-  const text = await pdfToText(file);
+async function pdfToDocx(file: File, onProgress?: (progress: number) => void): Promise<Blob> {
+  const text = await pdfToText(file, onProgress);
   return textToDocx(text);
 }
 
@@ -711,17 +763,17 @@ export async function convertDocument(
     /* ---- PDF source ---- */
     case 'pdf': {
       if (targetFormat === 'txt') {
-        const text = await pdfToText(file);
+        const text = await pdfToText(file, onProgress);
         resultBlob = new Blob([text], { type: 'text/plain' });
       } else if (targetFormat === 'html') {
-        const html = await pdfToHtml(file);
+        const html = await pdfToHtml(file, onProgress);
         resultBlob = new Blob([html], { type: 'text/html' });
       } else if (targetFormat === 'md') {
-        const md = await pdfToMarkdown(file);
+        const md = await pdfToMarkdown(file, onProgress);
         resultBlob = new Blob([md], { type: 'text/markdown' });
       } else if (targetFormat === 'docx') {
         onProgress?.(50);
-        resultBlob = await pdfToDocx(file);
+        resultBlob = await pdfToDocx(file, onProgress);
       } else {
         throw new Error(`Unsupported: pdf → ${targetFormat}`);
       }

@@ -1,64 +1,102 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
-const floatingBadges = [
-  { label: 'PNG', color: 'bg-pink-200', dot: 'bg-pink-400', top: '18%', left: '8%', delay: 0 },
-  { label: 'MP4', color: 'bg-orange-100', dot: 'bg-orange-400', top: '22%', right: '10%', delay: 0.5 },
-  { label: 'CSV', color: 'bg-emerald-100', dot: 'bg-emerald-400', bottom: '32%', left: '6%', delay: 1.0 },
-  { label: 'PDF', color: 'bg-blue-100', dot: 'bg-blue-400', bottom: '28%', right: '8%', delay: 0.3 },
-  { label: 'WAV', color: 'bg-purple-100', dot: 'bg-purple-400', top: '42%', left: '3%', delay: 0.7 },
-  { label: 'WEBP', color: 'bg-pink-100', dot: 'bg-pink-400', top: '35%', right: '4%', delay: 1.2 },
+/* ─── Orbiting Constellation Data ─── */
+
+const orbitItems = [
+  { icon: '\u{1F5BC}', label: 'PNG', angle: 0 },
+  { icon: '\u{1F3B5}', label: 'MP3', angle: 45 },
+  { icon: '\u{1F4C4}', label: 'PDF', angle: 90 },
+  { icon: '\u{1F3AC}', label: 'MP4', angle: 135 },
+  { icon: '\u{1F4CA}', label: 'CSV', angle: 180 },
+  { icon: '\u{1F310}', label: 'SVG', angle: 225 },
+  { icon: '\u{1F4D6}', label: 'EPUB', angle: 270 },
+  { icon: '\u{1F3A8}', label: 'PSD', angle: 315 },
 ];
+
+const innerOrbitItems = [
+  { icon: '\u{2728}', label: 'WebP', angle: 30 },
+  { icon: '\u{1F4DD}', label: 'DOCX', angle: 120 },
+  { icon: '\u{1F4BE}', label: 'JSON', angle: 210 },
+  { icon: '\u{1F399}', label: 'WAV', angle: 300 },
+];
+
+/* ─── Format Ticker Data ─── */
+
+const conversionPairs = [
+  { from: 'PNG', to: 'WebP', icon: '\u{1F5BC}', color: '#f472b6' },
+  { from: 'DOCX', to: 'PDF', icon: '\u{1F4C4}', color: '#60a5fa' },
+  { from: 'MP4', to: 'GIF', icon: '\u{1F3AC}', color: '#fb923c' },
+  { from: 'CSV', to: 'JSON', icon: '\u{1F4CA}', color: '#34d399' },
+  { from: 'WAV', to: 'MP3', icon: '\u{1F3B5}', color: '#a78bfa' },
+  { from: 'HEIC', to: 'JPG', icon: '\u{1F4F7}', color: '#f472b6' },
+  { from: 'XLSX', to: 'CSV', icon: '\u{1F4CA}', color: '#34d399' },
+  { from: 'TTF', to: 'WOFF2', icon: '\u{1F524}', color: '#2dd4bf' },
+  { from: 'EPUB', to: 'PDF', icon: '\u{1F4D6}', color: '#60a5fa' },
+  { from: 'YAML', to: 'JSON', icon: '\u{2699}', color: '#34d399' },
+  { from: 'PSD', to: 'PNG', icon: '\u{1F3A8}', color: '#f472b6' },
+  { from: 'MKV', to: 'MP4', icon: '\u{1F39E}', color: '#fb923c' },
+];
+
+/* ─── Conversion Flow Data ─── */
+
+const flowSteps = [
+  { inputIcon: '\u{1F5BC}', inputLabel: '.PNG', outputIcon: '\u{2728}', outputLabel: '.WebP' },
+  { inputIcon: '\u{1F4C4}', inputLabel: '.DOCX', outputIcon: '\u{1F4D1}', outputLabel: '.PDF' },
+  { inputIcon: '\u{1F3AC}', inputLabel: '.MKV', outputIcon: '\u{1F4F1}', outputLabel: '.MP4' },
+  { inputIcon: '\u{1F4CA}', inputLabel: '.CSV', outputIcon: '\u{1F4CB}', outputLabel: '.JSON' },
+  { inputIcon: '\u{1F3B5}', inputLabel: '.FLAC', outputIcon: '\u{1F3A7}', outputLabel: '.MP3' },
+];
+
+/* ─── Features ─── */
 
 const features = [
   {
     icon: '\u{1F5BC}',
     title: 'Images',
-    desc: 'PNG, JPG, WebP, GIF, BMP, AVIF, SVG \u2014 convert between any format using Canvas API.',
-    bg: 'bg-pink-50',
+    desc: 'PNG, JPG, WebP, GIF, BMP, AVIF, SVG, PSD, HEIC \u2014 convert between any format.',
     iconBg: 'bg-pink-100',
-    formats: ['PNG', 'JPG', 'WebP', 'GIF', 'AVIF', 'SVG'],
+    formats: ['PNG', 'JPG', 'WebP', 'GIF', 'AVIF', 'SVG', 'PSD', 'HEIC'],
     wide: true,
   },
   {
     icon: '\u{1F4C4}',
     title: 'Documents',
-    desc: 'DOCX, PDF, Markdown, HTML, TXT \u2014 preserves formatting with styled rendering.',
-    bg: 'bg-blue-50',
+    desc: 'DOCX, PDF, Markdown, HTML, TXT, PPTX, EPUB \u2014 preserves formatting.',
     iconBg: 'bg-blue-100',
-    formats: ['DOCX', 'PDF', 'MD', 'HTML', 'TXT'],
+    formats: ['DOCX', 'PDF', 'MD', 'HTML', 'TXT', 'PPTX', 'EPUB'],
     wide: false,
   },
   {
     icon: '\u{1F3B5}',
     title: 'Audio',
     desc: 'MP3, WAV, OGG, AAC, FLAC, M4A \u2014 powered by FFmpeg WebAssembly.',
-    bg: 'bg-purple-50',
     iconBg: 'bg-purple-100',
-    formats: ['MP3', 'WAV', 'OGG', 'FLAC'],
+    formats: ['MP3', 'WAV', 'OGG', 'FLAC', 'AAC'],
     wide: false,
   },
   {
     icon: '\u{1F3AC}',
     title: 'Video',
     desc: 'MP4, WebM, AVI, MOV, MKV \u2014 full video transcoding in your browser.',
-    bg: 'bg-orange-50',
     iconBg: 'bg-orange-100',
-    formats: ['MP4', 'WebM', 'AVI', 'MOV'],
+    formats: ['MP4', 'WebM', 'AVI', 'MOV', 'MKV'],
     wide: false,
   },
   {
     icon: '\u{1F4CA}',
-    title: 'Data',
-    desc: 'CSV, JSON, XML, YAML, TSV \u2014 smart parsing with structure preservation.',
-    bg: 'bg-emerald-50',
+    title: 'Data & Fonts',
+    desc: 'CSV, JSON, XML, YAML, XLSX, TTF, OTF, WOFF2 \u2014 smart structure preservation.',
     iconBg: 'bg-emerald-100',
-    formats: ['CSV', 'JSON', 'XML', 'YAML', 'TSV'],
+    formats: ['CSV', 'JSON', 'XML', 'YAML', 'XLSX', 'TTF', 'WOFF2'],
     wide: true,
   },
 ];
+
+/* ─── Animation Variants ─── */
 
 const stagger = {
   hidden: {},
@@ -74,6 +112,236 @@ const fadeUp = {
   },
 };
 
+/* ─── Orbiting Constellation Component ─── */
+
+function OrbitingConstellation() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none opacity-50">
+      {/* Center glow */}
+      <div className="absolute w-20 h-20 rounded-full bg-pink/8 blur-xl" />
+      <div className="absolute w-10 h-10 rounded-full bg-purple/10 blur-lg" />
+
+      {/* Outer orbit ring (visual) */}
+      <div className="absolute w-[720px] h-[720px] rounded-full border border-border-soft/40 hidden md:block" />
+      {/* Inner orbit ring */}
+      <div className="absolute w-[480px] h-[480px] rounded-full border border-border-soft/25 hidden md:block" />
+
+      {/* Outer orbit items */}
+      <div className="absolute w-[720px] h-[720px] hidden md:block animate-orbit-slow">
+        {orbitItems.map((item) => {
+          const rad = (item.angle * Math.PI) / 180;
+          const x = Math.cos(rad) * 360;
+          const y = Math.sin(rad) * 360;
+          return (
+            <div
+              key={item.label}
+              className="absolute animate-counter-orbit-slow"
+              style={{
+                left: `calc(50% + ${x}px - 24px)`,
+                top: `calc(50% + ${y}px - 24px)`,
+              }}
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="w-12 h-12 rounded-2xl bg-white border border-border-soft shadow-[0_2px_8px_rgba(160,120,80,0.06)] flex items-center justify-center text-lg">
+                  {item.icon}
+                </div>
+                <span className="font-mono text-[9px] font-bold text-text-light tracking-wider">{item.label}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Inner orbit items */}
+      <div className="absolute w-[480px] h-[480px] hidden md:block animate-orbit-med">
+        {innerOrbitItems.map((item) => {
+          const rad = (item.angle * Math.PI) / 180;
+          const x = Math.cos(rad) * 240;
+          const y = Math.sin(rad) * 240;
+          return (
+            <div
+              key={item.label}
+              className="absolute animate-counter-orbit-med"
+              style={{
+                left: `calc(50% + ${x}px - 18px)`,
+                top: `calc(50% + ${y}px - 18px)`,
+              }}
+            >
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="w-9 h-9 rounded-xl bg-white/80 border border-border-soft/60 shadow-[0_1px_4px_rgba(160,120,80,0.04)] flex items-center justify-center text-sm">
+                  {item.icon}
+                </div>
+                <span className="font-mono text-[8px] font-bold text-text-light/70 tracking-wider">{item.label}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Format Ticker Component ─── */
+
+function FormatTicker() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % conversionPairs.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
+  const pair = conversionPairs[index];
+
+  return (
+    <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-border-soft rounded-2xl shadow-[0_2px_8px_rgba(160,120,80,0.06)] min-w-[280px] justify-center">
+      <span className="text-lg">{pair.icon}</span>
+      <div className="flex items-center gap-2 font-mono text-sm font-bold overflow-hidden h-6">
+        <AnimatePresence mode="popLayout">
+          <motion.span
+            key={`from-${index}`}
+            className="text-text-dark"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] as const }}
+          >
+            .{pair.from}
+          </motion.span>
+        </AnimatePresence>
+        <motion.span
+          className="text-text-light"
+          animate={{ x: [0, 4, 0] }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          {'\u2192'}
+        </motion.span>
+        <AnimatePresence mode="popLayout">
+          <motion.span
+            key={`to-${index}`}
+            style={{ color: pair.color }}
+            className="font-extrabold"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] as const, delay: 0.08 }}
+          >
+            .{pair.to}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Conversion Flow Animation ─── */
+
+function ConversionFlow() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStep((prev) => (prev + 1) % flowSteps.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const current = flowSteps[step];
+
+  return (
+    <motion.div
+      className="relative w-full max-w-[600px] mx-auto py-8"
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6 }}
+    >
+      <div className="flex items-center justify-center gap-4 sm:gap-8">
+        {/* Input file */}
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={`in-${step}`}
+            className="flex flex-col items-center gap-1.5"
+            initial={{ x: -40, opacity: 0, scale: 0.8 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: -20, opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
+          >
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border-2 border-border-soft shadow-[0_4px_16px_rgba(160,120,80,0.08)] flex items-center justify-center text-2xl sm:text-3xl">
+              {current.inputIcon}
+            </div>
+            <span className="font-mono text-[11px] font-bold text-text-mid">{current.inputLabel}</span>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Arrow + bolt animation */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Traveling dots */}
+          <div className="relative w-12 sm:w-20 h-[2px] bg-border-soft overflow-hidden rounded">
+            <motion.div
+              className="absolute top-[-2px] w-2 h-2 rounded-full bg-pink"
+              animate={{ x: [0, 48, 80], opacity: [0, 1, 0] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+            />
+            <motion.div
+              className="absolute top-[-2px] w-1.5 h-1.5 rounded-full bg-purple"
+              animate={{ x: [0, 48, 80], opacity: [0, 1, 0] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+            />
+          </div>
+
+          {/* Center bolt */}
+          <motion.div
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white border-2 border-pink/30 shadow-[0_4px_20px_rgba(244,114,182,0.15)] flex items-center justify-center text-xl sm:text-2xl flex-shrink-0"
+            animate={{
+              scale: [1, 1.1, 1],
+              borderColor: ['rgba(244,114,182,0.3)', 'rgba(167,139,250,0.4)', 'rgba(244,114,182,0.3)'],
+            }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            {'\u26A1'}
+          </motion.div>
+
+          {/* More traveling dots */}
+          <div className="relative w-12 sm:w-20 h-[2px] bg-border-soft overflow-hidden rounded">
+            <motion.div
+              className="absolute top-[-2px] w-2 h-2 rounded-full bg-purple"
+              animate={{ x: [0, 48, 80], opacity: [0, 1, 0] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }}
+            />
+            <motion.div
+              className="absolute top-[-2px] w-1.5 h-1.5 rounded-full bg-mint"
+              animate={{ x: [0, 48, 80], opacity: [0, 1, 0] }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: 1.0 }}
+            />
+          </div>
+        </div>
+
+        {/* Output file */}
+        <AnimatePresence mode="popLayout">
+          <motion.div
+            key={`out-${step}`}
+            className="flex flex-col items-center gap-1.5"
+            initial={{ x: 40, opacity: 0, scale: 0.8 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            exit={{ x: 20, opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const, delay: 0.15 }}
+          >
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border-2 border-mint/30 shadow-[0_4px_16px_rgba(52,211,153,0.12)] flex items-center justify-center text-2xl sm:text-3xl">
+              {current.outputIcon}
+            </div>
+            <span className="font-mono text-[11px] font-bold text-mint">{current.outputLabel}</span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Main Page ─── */
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen relative bg-bg-cream">
@@ -84,6 +352,7 @@ export default function LandingPage() {
       {/* ──── NAV ──── */}
       <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-cream/80 backdrop-blur-xl border-b border-border-soft">
         <Link href="/" className="flex items-center gap-2.5 no-underline">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Transmute" className="w-8 h-8 rounded-[10px]" />
           <span className="font-serif font-extrabold text-xl tracking-tight text-text-dark">Transmute</span>
         </Link>
@@ -97,27 +366,8 @@ export default function LandingPage() {
 
       {/* ──── HERO ──── */}
       <section className="relative flex flex-col items-center justify-center min-h-screen px-6 pt-32 pb-20 text-center overflow-hidden">
-        {/* Floating format badges */}
-        {floatingBadges.map((badge) => (
-          <motion.div
-            key={badge.label}
-            className="absolute hidden md:flex items-center gap-1.5 px-3.5 py-2 bg-white border border-border-soft rounded-2xl font-mono text-xs font-semibold text-text-mid shadow-[0_4px_12px_rgba(160,120,80,0.08)] pointer-events-none select-none"
-            style={{
-              top: badge.top,
-              bottom: badge.bottom,
-              left: badge.left,
-              right: badge.right,
-            } as React.CSSProperties}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8 + badge.delay, duration: 0.5, ease: 'easeOut' }}
-          >
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-sm ${badge.dot}`} />
-              .{badge.label}
-            </div>
-          </motion.div>
-        ))}
+        {/* Orbiting constellation behind hero text */}
+        <OrbitingConstellation />
 
         <motion.div
           variants={stagger}
@@ -152,8 +402,13 @@ export default function LandingPage() {
             right in your browser. No uploads. No accounts. No limits.
           </motion.p>
 
+          {/* Format Ticker */}
+          <motion.div className="mt-7" variants={fadeUp}>
+            <FormatTicker />
+          </motion.div>
+
           {/* CTAs */}
-          <motion.div className="flex items-center gap-4 mt-10 flex-wrap justify-center" variants={fadeUp}>
+          <motion.div className="flex items-center gap-4 mt-8 flex-wrap justify-center" variants={fadeUp}>
             <Link
               href="/convert"
               className="inline-flex items-center gap-2.5 px-8 py-3.5 text-base font-bold text-white bg-pink rounded-2xl no-underline shadow-[0_4px_24px_rgba(244,114,182,0.3)] hover:shadow-[0_8px_36px_rgba(244,114,182,0.4)] hover:-translate-y-0.5 transition-all"
@@ -176,6 +431,23 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* ──── CONVERSION FLOW ──── */}
+      <section className="relative z-10 flex flex-col items-center px-6 -mt-10 mb-4">
+        <motion.div
+          className="text-center flex flex-col items-center gap-2 mb-2"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6 }}
+        >
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-purple/10 rounded-full font-mono text-[11px] font-semibold uppercase tracking-wider text-purple">
+            Live Preview
+          </span>
+          <p className="text-sm text-text-mid">Watch files transform in real time</p>
+        </motion.div>
+        <ConversionFlow />
+      </section>
+
       {/* ──── FEATURES ──── */}
       <section
         id="features"
@@ -195,7 +467,7 @@ export default function LandingPage() {
             Every format you need
           </h2>
           <p className="text-[17px] text-text-mid leading-relaxed max-w-[520px]">
-            40+ file formats across 5 categories, all converted instantly with zero quality loss.
+            70+ file formats across 5 categories, all converted instantly with zero quality loss.
           </p>
         </motion.div>
 
@@ -257,15 +529,16 @@ export default function LandingPage() {
           viewport={{ once: true, margin: '-60px' }}
         >
           {[
-            { num: '1', title: 'Drop your files', desc: 'Drag and drop any file \u2014 or click to browse. We accept everything.' },
-            { num: '2', title: 'Pick a format', desc: 'Choose your target format from smart suggestions based on file type.' },
-            { num: '3', title: 'Download', desc: 'Hit convert and download instantly. Files never leave your browser.' },
+            { num: '1', icon: '\u{1F4E5}', title: 'Drop your files', desc: 'Drag and drop any file \u2014 or click to browse. We accept everything.' },
+            { num: '2', icon: '\u{2699}', title: 'Pick a format', desc: 'Choose your target format from smart suggestions based on file type.' },
+            { num: '3', icon: '\u{2B07}', title: 'Download', desc: 'Hit convert and download instantly. Files never leave your browser.' },
           ].map((step, i) => (
             <motion.div
               key={step.num}
               className="flex-1 relative bg-white border border-border-soft rounded-3xl p-8 text-center shadow-[0_1px_3px_rgba(160,120,80,0.06)] hover:shadow-[0_12px_32px_rgba(160,120,80,0.1)] hover:-translate-y-1 transition-all duration-300"
               variants={fadeUp}
             >
+              <div className="text-3xl mb-3">{step.icon}</div>
               <div className="w-10 h-10 rounded-full inline-flex items-center justify-center font-serif font-extrabold text-lg text-white bg-pink mb-4">
                 {step.num}
               </div>
@@ -292,11 +565,7 @@ export default function LandingPage() {
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] as const }}
         >
-          <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-emerald-50 flex items-center justify-center">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2d1f14" strokeWidth="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          <div className="text-4xl mb-4">{'\u{1F6E1}'}</div>
           <h2 className="font-serif font-extrabold text-[28px] text-text-dark mb-3">Your files stay yours</h2>
           <p className="text-base text-text-mid leading-[1.7] max-w-[500px] mx-auto">
             Every conversion happens entirely in your browser using WebAssembly and Canvas APIs.
@@ -304,16 +573,14 @@ export default function LandingPage() {
           </p>
           <div className="flex justify-center gap-6 mt-7 flex-wrap">
             {[
-              { label: 'No uploads', color: 'bg-emerald-50', stroke: '#34d399' },
-              { label: 'No servers', color: 'bg-blue-50', stroke: '#60a5fa' },
-              { label: 'No tracking', color: 'bg-purple-50', stroke: '#a78bfa' },
-              { label: 'No limits', color: 'bg-orange-50', stroke: '#fb923c' },
+              { icon: '\u{1F6AB}', label: 'No uploads', color: 'bg-emerald-50' },
+              { icon: '\u{1F4BB}', label: 'No servers', color: 'bg-blue-50' },
+              { icon: '\u{1F440}', label: 'No tracking', color: 'bg-purple-50' },
+              { icon: '\u{267E}', label: 'No limits', color: 'bg-orange-50' },
             ].map((b) => (
               <div key={b.label} className="flex items-center gap-2 text-sm font-semibold text-text-mid">
                 <div className={`w-8 h-8 rounded-[10px] flex items-center justify-center ${b.color}`}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={b.stroke} strokeWidth="2.5">
-                    <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <span className="text-base">{b.icon}</span>
                 </div>
                 {b.label}
               </div>
