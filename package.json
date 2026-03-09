@@ -13,6 +13,7 @@
     "@ffmpeg/util": "^0.12.2",
     "fast-xml-parser": "^5.4.2",
     "framer-motion": "^12.35.2",
+    "html2canvas-pro": "^2.0.2",
     "js-yaml": "^4.1.1",
     "jspdf": "^4.2.0",
     "jszip": "^3.10.1",
