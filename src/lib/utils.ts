@@ -47,6 +47,7 @@ export function getMimeType(format: string): string {
     pdf: 'application/pdf',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     rtf: 'application/rtf',
+    epub: 'application/epub+zip',
     html: 'text/html',
     htm: 'text/html',
     txt: 'text/plain',
@@ -58,6 +59,28 @@ export function getMimeType(format: string): string {
     yml: 'application/x-yaml',
     tsv: 'text/tab-separated-values',
     toml: 'application/toml',
+    ini: 'text/plain',
+    env: 'text/plain',
+    properties: 'text/plain',
+    ndjson: 'application/x-ndjson',
+    jsonl: 'application/x-ndjson',
+    sql: 'application/sql',
+    // Spreadsheets
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    xls: 'application/vnd.ms-excel',
+    ods: 'application/vnd.oasis.opendocument.spreadsheet',
+    // HEIC
+    heic: 'image/heic',
+    heif: 'image/heif',
+    // PSD
+    psd: 'image/vnd.adobe.photoshop',
+    // Presentations
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    // Fonts
+    ttf: 'font/ttf',
+    otf: 'font/otf',
+    woff: 'font/woff',
+    woff2: 'font/woff2',
   };
   return mimeMap[format] || 'application/octet-stream';
 }

@@ -178,6 +178,37 @@ export async function convertImage(
 ): Promise<ConversionResult> {
   onProgress?.(10);
 
+  // HEIC/HEIF: decode to PNG blob first using heic2any, then continue as normal
+  let inputFile = file;
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  if (ext === 'heic' || ext === 'heif') {
+    const heic2any = (await import('heic2any')).default;
+    const pngBlob = await heic2any({ blob: file, toType: 'image/png' }) as Blob;
+    inputFile = new File([pngBlob], file.name.replace(/\.(heic|heif)$/i, '.png'), { type: 'image/png' });
+    onProgress?.(30);
+  }
+
+  // PSD: decode to PNG blob using ag-psd, then continue as normal
+  if (ext === 'psd') {
+    const { readPsd } = await import('ag-psd');
+    const buffer = await file.arrayBuffer();
+    const psd = readPsd(buffer);
+    onProgress?.(30);
+
+    // ag-psd puts the composite image on psd.canvas when running in browser
+    if (psd.canvas) {
+      const pngBlob = await new Promise<Blob>((resolve, reject) => {
+        psd.canvas!.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to render PSD to canvas'));
+        }, 'image/png');
+      });
+      inputFile = new File([pngBlob], file.name.replace(/\.psd$/i, '.png'), { type: 'image/png' });
+    } else {
+      throw new Error('Failed to decode PSD file — no composite image found');
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -270,6 +301,6 @@ export async function convertImage(
       img.src = e.target?.result as string;
     };
     reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(inputFile);
   });
 }

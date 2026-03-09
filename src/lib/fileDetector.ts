@@ -6,8 +6,9 @@ const EXTENSION_MAP: Record<string, FileCategory> = {
   bmp: 'image', tiff: 'image', tif: 'image', avif: 'image', svg: 'image',
   ico: 'image',
   // Documents
-  pdf: 'document', docx: 'document', doc: 'document', txt: 'document',
+  pdf: 'document', docx: 'document', txt: 'document',
   md: 'document', html: 'document', htm: 'document', rtf: 'document',
+  epub: 'document', pptx: 'document',
   // Audio
   mp3: 'audio', wav: 'audio', flac: 'audio', ogg: 'audio', aac: 'audio',
   m4a: 'audio', wma: 'audio', opus: 'audio',
@@ -17,6 +18,16 @@ const EXTENSION_MAP: Record<string, FileCategory> = {
   // Data
   csv: 'data', json: 'data', xml: 'data', yaml: 'data', yml: 'data',
   tsv: 'data', toml: 'data',
+  ini: 'data', env: 'data', properties: 'data',
+  ndjson: 'data', jsonl: 'data', sql: 'data',
+  // Spreadsheets (category: data)
+  xlsx: 'data', xls: 'data', ods: 'data',
+  // HEIC images
+  heic: 'image', heif: 'image',
+  // PSD (Photoshop)
+  psd: 'image',
+  // Fonts (categorized as data for routing)
+  ttf: 'data', otf: 'data', woff: 'data', woff2: 'data',
 };
 
 export function getExtension(filename: string): string {

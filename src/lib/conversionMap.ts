@@ -12,16 +12,21 @@ const IMAGE_CONVERSIONS: Record<string, string[]> = {
   avif: ['png', 'jpg', 'webp', 'gif', 'bmp', 'tiff'],
   svg: ['png', 'jpg', 'webp', 'gif', 'bmp', 'avif', 'tiff'],
   ico: ['png', 'jpg', 'webp', 'gif', 'bmp'],
+  heic: ['png', 'jpg', 'webp', 'gif', 'bmp', 'avif', 'tiff'],
+  heif: ['png', 'jpg', 'webp', 'gif', 'bmp', 'avif', 'tiff'],
+  psd: ['png', 'jpg', 'webp', 'gif', 'bmp', 'avif', 'tiff', 'ico'],
 };
 
 const DOCUMENT_CONVERSIONS: Record<string, string[]> = {
-  pdf: ['txt', 'html', 'md', 'docx'],
-  docx: ['pdf', 'html', 'txt', 'md'],
-  md: ['html', 'pdf', 'txt', 'docx'],
-  html: ['pdf', 'txt', 'md', 'docx'],
-  htm: ['pdf', 'txt', 'md', 'docx'],
-  txt: ['pdf', 'html', 'md', 'docx'],
+  pdf: ['txt', 'html', 'md', 'docx', 'epub'],
+  docx: ['pdf', 'html', 'txt', 'md', 'epub'],
+  md: ['html', 'pdf', 'txt', 'docx', 'epub', 'pptx'],
+  html: ['pdf', 'txt', 'md', 'docx', 'epub', 'pptx'],
+  htm: ['pdf', 'txt', 'md', 'docx', 'epub', 'pptx'],
+  txt: ['pdf', 'html', 'md', 'docx', 'epub', 'pptx'],
   rtf: ['txt', 'html', 'md', 'pdf', 'docx'],
+  epub: ['txt', 'html', 'md', 'pdf'],
+  pptx: ['txt', 'html', 'pdf', 'md'],
 };
 
 const AUDIO_CONVERSIONS: Record<string, string[]> = {
@@ -47,13 +52,31 @@ const VIDEO_CONVERSIONS: Record<string, string[]> = {
 };
 
 const DATA_CONVERSIONS: Record<string, string[]> = {
-  csv: ['json', 'xml', 'yaml', 'tsv', 'toml'],
-  json: ['csv', 'xml', 'yaml', 'tsv', 'toml'],
-  xml: ['json', 'csv', 'yaml', 'tsv', 'toml'],
-  yaml: ['json', 'csv', 'xml', 'tsv', 'toml'],
-  yml: ['json', 'csv', 'xml', 'tsv', 'toml'],
-  tsv: ['csv', 'json', 'xml', 'yaml', 'toml'],
-  toml: ['json', 'csv', 'xml', 'yaml', 'tsv'],
+  csv: ['json', 'xml', 'yaml', 'tsv', 'toml', 'xlsx', 'ini', 'env', 'properties', 'ndjson', 'sql'],
+  json: ['csv', 'xml', 'yaml', 'tsv', 'toml', 'xlsx', 'ini', 'env', 'properties', 'ndjson', 'sql'],
+  xml: ['json', 'csv', 'yaml', 'tsv', 'toml', 'xlsx'],
+  yaml: ['json', 'csv', 'xml', 'tsv', 'toml', 'xlsx', 'ini', 'env', 'properties', 'ndjson', 'sql'],
+  yml: ['json', 'csv', 'xml', 'tsv', 'toml', 'xlsx', 'ini', 'env', 'properties', 'ndjson', 'sql'],
+  tsv: ['csv', 'json', 'xml', 'yaml', 'toml', 'xlsx', 'ndjson', 'sql'],
+  toml: ['json', 'csv', 'xml', 'yaml', 'tsv', 'xlsx'],
+  // Key-value formats
+  ini: ['json', 'yaml', 'toml', 'env', 'properties', 'xml', 'csv'],
+  env: ['json', 'yaml', 'toml', 'ini', 'properties', 'csv'],
+  properties: ['json', 'yaml', 'toml', 'ini', 'env', 'csv'],
+  // Line-delimited JSON
+  ndjson: ['json', 'csv', 'tsv', 'yaml', 'xml', 'xlsx', 'sql'],
+  jsonl: ['json', 'csv', 'tsv', 'yaml', 'xml', 'xlsx', 'sql'],
+  // SQL
+  sql: ['json', 'csv', 'tsv', 'yaml', 'xlsx'],
+  // Spreadsheets
+  xlsx: ['csv', 'json', 'tsv', 'xml', 'yaml', 'toml', 'ods', 'html', 'txt', 'ndjson', 'sql'],
+  xls: ['xlsx', 'csv', 'json', 'tsv', 'xml', 'yaml', 'toml', 'ods', 'html', 'txt', 'ndjson', 'sql'],
+  ods: ['xlsx', 'csv', 'json', 'tsv', 'xml', 'yaml', 'toml', 'html', 'txt', 'ndjson', 'sql'],
+  // Fonts
+  ttf: ['otf', 'woff', 'woff2'],
+  otf: ['ttf', 'woff', 'woff2'],
+  woff: ['ttf', 'otf', 'woff2'],
+  woff2: ['ttf', 'otf', 'woff'],
 };
 
 const ALL_CONVERSIONS: Record<FileCategory, Record<string, string[]>> = {
@@ -77,15 +100,21 @@ export function getDefaultTarget(category: FileCategory, extension: string): str
     // Images → WebP (modern, smaller)
     png: 'webp', jpg: 'webp', jpeg: 'webp', gif: 'webp',
     bmp: 'png', tiff: 'png', tif: 'png', avif: 'png', svg: 'png', ico: 'png',
+    heic: 'jpg', heif: 'jpg', psd: 'png',
     // Documents → PDF (except PDF → DOCX)
     docx: 'pdf', md: 'html', html: 'pdf', htm: 'pdf', txt: 'pdf',
-    pdf: 'docx', rtf: 'docx',
+    pdf: 'docx', rtf: 'docx', epub: 'html', pptx: 'pdf',
     // Audio → MP3
     wav: 'mp3', flac: 'mp3', ogg: 'mp3', aac: 'mp3', m4a: 'mp3', wma: 'mp3', opus: 'mp3', mp3: 'wav',
     // Video → MP4
     avi: 'mp4', mov: 'mp4', mkv: 'mp4', flv: 'mp4', wmv: 'mp4', m4v: 'mp4', mp4: 'webm', webm: 'mp4',
     // Data → JSON
     csv: 'json', xml: 'json', yaml: 'json', yml: 'json', tsv: 'csv', json: 'csv', toml: 'json',
+    ini: 'json', env: 'json', properties: 'json', ndjson: 'json', jsonl: 'json', sql: 'json',
+    // Spreadsheets → CSV
+    xlsx: 'csv', xls: 'csv', ods: 'csv',
+    // Fonts → WOFF2 (modern web standard)
+    ttf: 'woff2', otf: 'woff2', woff: 'woff2', woff2: 'ttf',
   };
 
   return defaults[extension] || formats[0];
