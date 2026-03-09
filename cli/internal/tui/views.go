@@ -31,51 +31,85 @@ func nameWidth(termW int) int {
 	return w
 }
 
+// pad is a shortcut that pads a line to full width with cream background.
+func (m Model) pad(line string) string {
+	return theme.PadLine(line, m.width)
+}
+
+// padWarm pads a line to full width with the warm (highlighted) background.
+func (m Model) padWarm(line string) string {
+	return theme.PadLineWithBg(line, m.width, theme.Warm)
+}
+
+// blank returns a full-width blank line with cream background.
+func (m Model) blank() string {
+	return theme.PadLine("", m.width)
+}
+
 // View renders the entire TUI, filling the full terminal.
 func (m Model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
 	}
 
-	var sections []string
+	// We build an array of pre-padded lines (each already full-width with bg).
+	var lines []string
 
-	sections = append(sections, m.renderTitleBar())
-	sections = append(sections, m.renderDivider())
+	// Title bar (1 line)
+	lines = append(lines, m.pad(m.renderTitleBar()))
+
+	// Divider (1 line)
+	lines = append(lines, m.pad(m.renderDivider()))
+
+	// State-specific content
+	var bottomLines []string // lines that go at the very bottom
 
 	switch m.state {
 	case stateFileList:
-		sections = append(sections, m.renderColumnHeader())
-		sections = append(sections, m.renderFileList())
-		sections = append(sections, m.renderDivider())
-		sections = append(sections, m.renderBottomBar())
+		// Column header
+		lines = append(lines, m.pad(m.renderColumnHeader()))
+
+		// File rows
+		fileLines := m.renderFileRows()
+		lines = append(lines, fileLines...)
+
+		// Bottom section: divider + bottom bar (pinned to bottom)
+		bottomLines = append(bottomLines, m.pad(m.renderDivider()))
+		bottomLines = append(bottomLines, m.pad(m.renderBottomBar()))
+
 	case stateConverting:
-		sections = append(sections, m.renderConverting())
+		for _, l := range strings.Split(m.renderConverting(), "\n") {
+			lines = append(lines, m.pad(l))
+		}
+
 	case stateResults:
-		sections = append(sections, m.renderResults())
-		sections = append(sections, m.renderDivider())
-		sections = append(sections, m.renderResultsFooter())
+		for _, l := range strings.Split(m.renderResults(), "\n") {
+			lines = append(lines, m.pad(l))
+		}
+		bottomLines = append(bottomLines, m.pad(m.renderDivider()))
+		bottomLines = append(bottomLines, m.pad(m.renderResultsFooter()))
 	}
 
+	// Help overlay (if visible, goes right after content)
 	if m.showHelp {
-		sections = append(sections, m.renderHelp())
+		for _, l := range strings.Split(m.renderHelp(), "\n") {
+			lines = append(lines, m.pad(l))
+		}
 	}
 
-	content := lipgloss.JoinVertical(lipgloss.Left, sections...)
-
-	// Split into individual lines and pad each to full width with background
-	lines := strings.Split(content, "\n")
-	for i, line := range lines {
-		lines[i] = theme.PadLine(line, m.width)
-	}
-
-	// Fill remaining vertical space with background-colored blank lines
-	remaining := m.height - len(lines)
+	// Calculate how many blank lines we need between content and bottom bar
+	totalUsed := len(lines) + len(bottomLines)
+	remaining := m.height - totalUsed
 	if remaining > 0 {
-		fill := theme.FillBlankLines(remaining, m.width)
-		return strings.Join(lines, "\n") + "\n" + fill
+		for i := 0; i < remaining; i++ {
+			lines = append(lines, m.blank())
+		}
 	}
 
-	// Truncate if content exceeds terminal height
+	// Append bottom bar lines
+	lines = append(lines, bottomLines...)
+
+	// Truncate if somehow we exceed terminal height
 	if len(lines) > m.height {
 		lines = lines[:m.height]
 	}
@@ -122,7 +156,6 @@ func (m Model) renderDivider() string {
 func (m Model) renderColumnHeader() string {
 	nw := nameWidth(m.width)
 
-	// "Name" sits after the cursor+check prefix (6 chars), indented
 	nameHdr := theme.Breadcrumb.Copy().Width(colCursor + colCheck + nw).Render(
 		strings.Repeat(" ", colCursor+colCheck) + "Name")
 	sizeHdr := theme.Breadcrumb.Copy().Width(colSize).Align(lipgloss.Right).Render("Size")
@@ -132,16 +165,16 @@ func (m Model) renderColumnHeader() string {
 	return nameHdr + "  " + sizeHdr + "  " + fmtHdr + "  " + statHdr
 }
 
-// ─── File list ───────────────────────────────────────────────
+// ─── File rows ───────────────────────────────────────────────
 
-func (m Model) renderFileList() string {
+// renderFileRows returns already-padded lines for the file list area.
+func (m Model) renderFileRows() []string {
 	if len(m.files) == 0 {
 		empty := lipgloss.NewStyle().
 			Foreground(theme.Light).
 			Italic(true).
-			Padding(2, 4).
-			Render("No supported files found. Pass file paths or glob patterns as arguments.")
-		return empty
+			Render("    No supported files found. Pass file paths or glob patterns as arguments.")
+		return []string{m.blank(), m.pad(empty), m.blank()}
 	}
 
 	maxVisible := m.maxVisibleFiles()
@@ -152,26 +185,23 @@ func (m Model) renderFileList() string {
 
 	var rows []string
 	for i := m.scroll; i < end; i++ {
-		rows = append(rows, m.renderFileRow(i))
-	}
-
-	// Pad with empty rows so the file list always fills the available space
-	rendered := len(rows)
-	if rendered < maxVisible {
-		emptyRow := strings.Repeat(" ", m.width)
-		for i := rendered; i < maxVisible; i++ {
-			rows = append(rows, emptyRow)
+		row := m.renderFileRow(i)
+		isCursor := i == m.cursor
+		if isCursor {
+			rows = append(rows, m.padWarm(row))
+		} else {
+			rows = append(rows, m.pad(row))
 		}
 	}
 
-	// Scrollbar indicator
+	// Scrollbar indicator (if needed)
 	if len(m.files) > maxVisible {
 		scrollInfo := theme.Help.Render(fmt.Sprintf(
 			"  showing %d\u2013%d of %d", m.scroll+1, end, len(m.files)))
-		rows = append(rows, scrollInfo)
+		rows = append(rows, m.pad(scrollInfo))
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, rows...)
+	return rows
 }
 
 func (m Model) renderFileRow(idx int) string {
@@ -197,7 +227,6 @@ func (m Model) renderFileRow(idx int) string {
 	extBadge := theme.ExtBadge(catColor).Render(strings.ToUpper(f.ext))
 
 	nameText := f.name
-	// Reserve space for icon(2) + space(1) + ext(max 5) + space(1) + ...
 	maxName := nw - 10
 	if maxName < 8 {
 		maxName = 8
@@ -213,7 +242,6 @@ func (m Model) renderFileRow(idx int) string {
 		nameStyle = theme.FileName
 	}
 
-	// Build the name cell content, then wrap in a fixed-width style
 	nameContent := icon + " " + extBadge + " " + nameStyle.Render(nameText)
 	nameCell := lipgloss.NewStyle().Width(nw).MaxWidth(nw).Render(nameContent)
 
@@ -238,15 +266,7 @@ func (m Model) renderFileRow(idx int) string {
 	}
 	statusCell := lipgloss.NewStyle().Width(colStatus).Align(lipgloss.Center).Render(statusStr)
 
-	// ── Assemble row ──
-	row := cursor + check + nameCell + "  " + sizeCell + "  " + fmtCell + "  " + statusCell
-
-	// Highlight active row with warm background
-	if isCursor {
-		row = lipgloss.NewStyle().Background(theme.Warm).Render(row)
-	}
-
-	return row
+	return cursor + check + nameCell + "  " + sizeCell + "  " + fmtCell + "  " + statusCell
 }
 
 func renderFormatSelector(f fileEntry, active bool) string {

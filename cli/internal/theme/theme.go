@@ -18,7 +18,7 @@ var (
 	Teal   = lipgloss.Color("#2dd4bf")
 
 	Cream = lipgloss.Color("#fdf6ef")
-	Warm  = lipgloss.Color("#faf0e6")
+	Warm  = lipgloss.Color("#f8f0e6")
 	Peach = lipgloss.Color("#fce8d5")
 
 	Dark  = lipgloss.Color("#2d1f14")
@@ -149,18 +149,22 @@ var (
 		Bold(true)
 )
 
-// PadLine pads a single rendered line to the given width with the screen
-// background color. This ensures every line carries the background color
-// all the way to the right edge of the terminal.
+// PadLine pads a single rendered line to the full terminal width and applies
+// the cream background behind ALL content (not just the padding). This is
+// achieved by placing the line inside a full-width style with Background set.
 func PadLine(line string, width int) string {
+	return PadLineWithBg(line, width, ScreenBg)
+}
+
+// PadLineWithBg pads a line to full width with a specific background color.
+func PadLineWithBg(line string, width int, bg color.Color) string {
 	w := lipgloss.Width(line)
 	if w >= width {
-		return line
+		// Even if the line is already wide enough, wrap with background
+		return lipgloss.NewStyle().Background(bg).Render(line)
 	}
-	pad := lipgloss.NewStyle().
-		Background(ScreenBg).
-		Render(strings.Repeat(" ", width-w))
-	return line + pad
+	pad := strings.Repeat(" ", width-w)
+	return lipgloss.NewStyle().Background(bg).Render(line + pad)
 }
 
 // FillBlankLines returns n blank lines fully painted with the screen
