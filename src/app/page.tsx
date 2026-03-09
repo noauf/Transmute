@@ -1126,6 +1126,7 @@ export default function LandingPage() {
               <div className="flex items-center justify-between px-4 py-2">
                 <div className="flex items-center gap-2">
                   <span className="text-[#f472b6] font-bold text-[13px]">transmute</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#a78bfa] bg-[#a78bfa]/10 px-1.5 py-0.5 rounded">beta</span>
                   <span className="text-[#8b7355]">6 files {'\u00B7'} 5 selected</span>
                 </div>
                 <span className="text-[#bfa98a] italic">? help</span>
