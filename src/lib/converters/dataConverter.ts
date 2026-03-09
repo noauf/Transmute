@@ -52,6 +52,17 @@ function yamlToJson(text: string): unknown {
   return yaml.load(text);
 }
 
+async function tomlToJson(text: string): Promise<unknown> {
+  const TOML = await import('smol-toml');
+  return TOML.parse(text);
+}
+
+async function jsonToToml(data: unknown): Promise<string> {
+  const TOML = await import('smol-toml');
+  const obj = typeof data === 'string' ? JSON.parse(data) : data;
+  return TOML.stringify(obj as Record<string, unknown>);
+}
+
 async function toIntermediate(file: File, ext: string): Promise<unknown> {
   const text = await readFileAsText(file);
 
@@ -67,12 +78,14 @@ async function toIntermediate(file: File, ext: string): Promise<unknown> {
     case 'yaml':
     case 'yml':
       return yamlToJson(text);
+    case 'toml':
+      return tomlToJson(text);
     default:
       throw new Error(`Unsupported source format: ${ext}`);
   }
 }
 
-function fromIntermediate(data: unknown, targetFormat: string): string {
+async function fromIntermediate(data: unknown, targetFormat: string): Promise<string> {
   switch (targetFormat) {
     case 'json':
       return JSON.stringify(data, null, 2);
@@ -85,6 +98,8 @@ function fromIntermediate(data: unknown, targetFormat: string): string {
     case 'yaml':
     case 'yml':
       return jsonToYaml(data);
+    case 'toml':
+      return jsonToToml(data);
     default:
       throw new Error(`Unsupported target format: ${targetFormat}`);
   }
@@ -101,7 +116,7 @@ export async function convertData(
   const intermediate = await toIntermediate(file, ext);
   onProgress?.(60);
 
-  const output = fromIntermediate(intermediate, targetFormat);
+  const output = await fromIntermediate(intermediate, targetFormat);
   onProgress?.(90);
 
   const blob = new Blob([output], { type: getMimeType(targetFormat) });

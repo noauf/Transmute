@@ -62,6 +62,12 @@ function getFFmpegArgs(sourceExt: string, targetFormat: string): string[] {
       case 'wav':
         args.push('-codec:a', 'pcm_s16le');
         break;
+      case 'opus':
+        args.push('-codec:a', 'libopus', '-b:a', '128k');
+        break;
+      case 'wma':
+        args.push('-codec:a', 'wmav2', '-b:a', '192k');
+        break;
     }
     args.push(`output.${targetFormat}`);
     return args;
@@ -69,6 +75,15 @@ function getFFmpegArgs(sourceExt: string, targetFormat: string): string[] {
 
   // Video → Video
   if (videoFormats.includes(sourceExt) && videoFormats.includes(targetFormat)) {
+    // WebM needs VP8/VP9 + Vorbis/Opus, not libx264
+    if (targetFormat === 'webm') {
+      return [
+        '-i', `input.${sourceExt}`,
+        '-c:v', 'libvpx', '-b:v', '1M', '-crf', '30',
+        '-c:a', 'libvorbis', '-b:a', '128k',
+        `output.${targetFormat}`,
+      ];
+    }
     return [
       '-i', `input.${sourceExt}`,
       '-c:v', 'libx264', '-preset', 'fast',
@@ -80,11 +95,27 @@ function getFFmpegArgs(sourceExt: string, targetFormat: string): string[] {
   // Video → Audio (extract)
   if (videoFormats.includes(sourceExt) && audioFormats.includes(targetFormat)) {
     const args = ['-i', `input.${sourceExt}`, '-vn'];
-    if (targetFormat === 'mp3') args.push('-codec:a', 'libmp3lame', '-b:a', '192k');
-    else if (targetFormat === 'aac' || targetFormat === 'm4a') args.push('-codec:a', 'aac', '-b:a', '192k');
-    else if (targetFormat === 'ogg') args.push('-codec:a', 'libvorbis');
-    else if (targetFormat === 'wav') args.push('-codec:a', 'pcm_s16le');
-    else if (targetFormat === 'flac') args.push('-codec:a', 'flac');
+    switch (targetFormat) {
+      case 'mp3':
+        args.push('-codec:a', 'libmp3lame', '-b:a', '192k');
+        break;
+      case 'aac':
+      case 'm4a':
+        args.push('-codec:a', 'aac', '-b:a', '192k');
+        break;
+      case 'ogg':
+        args.push('-codec:a', 'libvorbis', '-b:a', '192k');
+        break;
+      case 'wav':
+        args.push('-codec:a', 'pcm_s16le');
+        break;
+      case 'flac':
+        args.push('-codec:a', 'flac');
+        break;
+      case 'opus':
+        args.push('-codec:a', 'libopus', '-b:a', '128k');
+        break;
+    }
     args.push(`output.${targetFormat}`);
     return args;
   }

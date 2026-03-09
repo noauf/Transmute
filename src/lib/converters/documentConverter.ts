@@ -26,12 +26,6 @@ async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
 
 /* ============================================
    Styled HTML document wrapper
-   
-   This is used for ALL HTML output and as the
-   intermediate step for PDF rendering. Embeds
-   full CSS so the document looks correct both
-   as a standalone .html file and when rendered
-   to PDF via jsPDF.html().
    ============================================ */
 
 function wrapInStyledHtml(bodyHtml: string, title: string): string {
@@ -42,9 +36,7 @@ function wrapInStyledHtml(bodyHtml: string, title: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <style>
-  /* Reset */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
     font-size: 14px;
@@ -55,132 +47,40 @@ function wrapInStyledHtml(bodyHtml: string, title: string): string {
     max-width: 800px;
     margin: 0 auto;
   }
-
-  /* Headings */
   h1, h2, h3, h4, h5, h6 {
-    margin-top: 1.4em;
-    margin-bottom: 0.6em;
-    font-weight: 700;
-    line-height: 1.3;
-    color: #111111;
+    margin-top: 1.4em; margin-bottom: 0.6em; font-weight: 700; line-height: 1.3; color: #111111;
   }
   h1 { font-size: 2em; border-bottom: 2px solid #e5e5e5; padding-bottom: 0.3em; }
   h2 { font-size: 1.5em; border-bottom: 1px solid #eeeeee; padding-bottom: 0.25em; }
   h3 { font-size: 1.25em; }
   h4 { font-size: 1.1em; }
   h5, h6 { font-size: 1em; color: #555555; }
-
-  /* Paragraphs & inline */
   p { margin-bottom: 1em; }
   strong, b { font-weight: 700; }
   em, i { font-style: italic; }
-  u { text-decoration: underline; }
-  s, strike, del { text-decoration: line-through; color: #888; }
-  small { font-size: 0.85em; }
-  sup { vertical-align: super; font-size: 0.75em; }
-  sub { vertical-align: sub; font-size: 0.75em; }
-  mark { background: #fff3b0; padding: 0.1em 0.2em; border-radius: 2px; }
-  abbr { text-decoration: underline dotted; cursor: help; }
-
-  /* Links */
   a { color: #0066cc; text-decoration: underline; }
-  a:hover { color: #004499; }
-
-  /* Lists */
   ul, ol { margin-bottom: 1em; padding-left: 2em; }
-  ul ul, ol ol, ul ol, ol ul { margin-bottom: 0; }
   li { margin-bottom: 0.3em; }
-  li > p { margin-bottom: 0.3em; }
-
-  /* Blockquote */
   blockquote {
-    margin: 1em 0;
-    padding: 0.8em 1.2em;
-    border-left: 4px solid #0066cc;
-    background: #f6f8fa;
-    color: #333;
-    font-style: italic;
+    margin: 1em 0; padding: 0.8em 1.2em; border-left: 4px solid #0066cc;
+    background: #f6f8fa; color: #333; font-style: italic;
   }
   blockquote p:last-child { margin-bottom: 0; }
-
-  /* Code */
   code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.9em;
-    background: #f0f0f0;
-    padding: 0.15em 0.4em;
-    border-radius: 3px;
-    color: #c7254e;
+    font-size: 0.9em; background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; color: #c7254e;
   }
   pre {
-    margin: 1em 0;
-    padding: 1em;
-    background: #f6f8fa;
-    border: 1px solid #e1e4e8;
-    border-radius: 6px;
-    overflow-x: auto;
-    font-size: 0.9em;
-    line-height: 1.5;
+    margin: 1em 0; padding: 1em; background: #f6f8fa; border: 1px solid #e1e4e8;
+    border-radius: 6px; overflow-x: auto; font-size: 0.9em; line-height: 1.5;
   }
-  pre code {
-    background: none;
-    padding: 0;
-    border-radius: 0;
-    color: inherit;
-  }
-
-  /* Tables */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1em 0;
-    font-size: 0.95em;
-  }
-  th, td {
-    padding: 8px 12px;
-    border: 1px solid #d0d7de;
-    text-align: left;
-    vertical-align: top;
-  }
-  th {
-    background: #f6f8fa;
-    font-weight: 700;
-    color: #111;
-  }
+  pre code { background: none; padding: 0; border-radius: 0; color: inherit; }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.95em; }
+  th, td { padding: 8px 12px; border: 1px solid #d0d7de; text-align: left; vertical-align: top; }
+  th { background: #f6f8fa; font-weight: 700; color: #111; }
   tr:nth-child(even) { background: #fafbfc; }
-  caption {
-    caption-side: bottom;
-    padding: 8px;
-    font-size: 0.9em;
-    color: #666;
-    font-style: italic;
-  }
-
-  /* Horizontal rule */
-  hr {
-    border: none;
-    border-top: 1px solid #e5e5e5;
-    margin: 2em 0;
-  }
-
-  /* Images embedded in documents */
-  img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 1em 0;
-  }
-
-  /* Definition lists */
-  dl { margin-bottom: 1em; }
-  dt { font-weight: 700; margin-top: 0.5em; }
-  dd { margin-left: 2em; margin-bottom: 0.5em; }
-
-  /* Figure */
-  figure { margin: 1.5em 0; text-align: center; }
-  figcaption { font-size: 0.9em; color: #666; margin-top: 0.5em; font-style: italic; }
-
-  /* First element shouldn't have top margin */
+  hr { border: none; border-top: 1px solid #e5e5e5; margin: 2em 0; }
+  img { max-width: 100%; height: auto; border-radius: 4px; margin: 1em 0; }
   body > *:first-child { margin-top: 0; }
 </style>
 </head>
@@ -199,15 +99,320 @@ function escapeHtml(text: string): string {
 }
 
 /* ============================================
+   PDF text extraction via pdfjs-dist
+   ============================================ */
+
+async function pdfToText(file: File): Promise<string> {
+  const pdfjsLib = await import('pdfjs-dist');
+
+  // Use the bundled worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+
+  const arrayBuffer = await readFileAsArrayBuffer(file);
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  const textParts: string[] = [];
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      .filter((item) => 'str' in item)
+      .map((item) => (item as { str: string }).str)
+      .join(' ');
+    if (pageText.trim()) {
+      textParts.push(pageText);
+    }
+  }
+
+  if (textParts.length === 0) {
+    return `[This PDF contains no extractable text — it may be image-based/scanned.]`;
+  }
+
+  return textParts.join('\n\n');
+}
+
+/* ============================================
+   PDF → HTML
+   Extracts text per page, wraps in styled HTML
+   ============================================ */
+
+async function pdfToHtml(file: File): Promise<string> {
+  const text = await pdfToText(file);
+  const paragraphs = text.split(/\n\n+/).filter(Boolean);
+  const bodyHtml = paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join('\n');
+  return wrapInStyledHtml(bodyHtml, file.name.replace(/\.pdf$/i, ''));
+}
+
+/* ============================================
+   PDF → Markdown
+   ============================================ */
+
+async function pdfToMarkdown(file: File): Promise<string> {
+  const text = await pdfToText(file);
+  // Attempt to detect headings (ALL CAPS lines, short lines)
+  const lines = text.split('\n');
+  const mdLines: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      mdLines.push('');
+      continue;
+    }
+    // Heuristic: short all-caps lines are likely headings
+    if (trimmed.length < 80 && trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed)) {
+      mdLines.push(`## ${trimmed}`);
+    } else {
+      mdLines.push(trimmed);
+    }
+  }
+
+  return mdLines.join('\n');
+}
+
+/* ============================================
+   PDF → DOCX
+   Extracts text, builds DOCX using docx package
+   ============================================ */
+
+async function pdfToDocx(file: File): Promise<Blob> {
+  const text = await pdfToText(file);
+  return textToDocx(text);
+}
+
+/* ============================================
+   Text/HTML/MD → DOCX generation using docx pkg
+   ============================================ */
+
+async function textToDocx(text: string): Promise<Blob> {
+  const docx = await import('docx');
+  const paragraphs = text.split(/\n\n+/).filter(Boolean);
+
+  const children = paragraphs.map(
+    (p) =>
+      new docx.Paragraph({
+        children: [new docx.TextRun({ text: p, size: 24 })],
+        spacing: { after: 200 },
+      })
+  );
+
+  const doc = new docx.Document({
+    sections: [{ children }],
+  });
+
+  return await docx.Packer.toBlob(doc);
+}
+
+async function htmlToDocx(html: string): Promise<Blob> {
+  // Convert HTML to plain text, then build DOCX
+  const plainText = htmlToText(html);
+  return textToDocx(plainText);
+}
+
+async function markdownToDocx(mdText: string): Promise<Blob> {
+  const docx = await import('docx');
+  const lines = mdText.split('\n');
+  const children: InstanceType<typeof docx.Paragraph>[] = [];
+
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Headings
+    const h1Match = line.match(/^#\s+(.+)/);
+    const h2Match = line.match(/^##\s+(.+)/);
+    const h3Match = line.match(/^###\s+(.+)/);
+    const h4Match = line.match(/^####\s+(.+)/);
+
+    if (h1Match) {
+      children.push(
+        new docx.Paragraph({
+          children: [new docx.TextRun({ text: h1Match[1], bold: true, size: 48 })],
+          heading: docx.HeadingLevel.HEADING_1,
+          spacing: { after: 200 },
+        })
+      );
+    } else if (h2Match) {
+      children.push(
+        new docx.Paragraph({
+          children: [new docx.TextRun({ text: h2Match[1], bold: true, size: 36 })],
+          heading: docx.HeadingLevel.HEADING_2,
+          spacing: { after: 160 },
+        })
+      );
+    } else if (h3Match) {
+      children.push(
+        new docx.Paragraph({
+          children: [new docx.TextRun({ text: h3Match[1], bold: true, size: 28 })],
+          heading: docx.HeadingLevel.HEADING_3,
+          spacing: { after: 120 },
+        })
+      );
+    } else if (h4Match) {
+      children.push(
+        new docx.Paragraph({
+          children: [new docx.TextRun({ text: h4Match[1], bold: true, size: 24 })],
+          heading: docx.HeadingLevel.HEADING_4,
+          spacing: { after: 100 },
+        })
+      );
+    }
+    // Unordered list
+    else if (line.match(/^[-*+]\s+/)) {
+      children.push(
+        new docx.Paragraph({
+          children: parseInlineMarkdown(docx, line.replace(/^[-*+]\s+/, '')),
+          bullet: { level: 0 },
+        })
+      );
+    }
+    // Ordered list
+    else if (line.match(/^\d+\.\s+/)) {
+      children.push(
+        new docx.Paragraph({
+          children: parseInlineMarkdown(docx, line.replace(/^\d+\.\s+/, '')),
+          numbering: { reference: 'default-numbering', level: 0 },
+        })
+      );
+    }
+    // Blockquote
+    else if (line.startsWith('>')) {
+      children.push(
+        new docx.Paragraph({
+          children: [
+            new docx.TextRun({
+              text: line.replace(/^>\s*/, ''),
+              italics: true,
+              color: '555555',
+              size: 24,
+            }),
+          ],
+          indent: { left: 720 },
+          border: {
+            left: { style: docx.BorderStyle.SINGLE, size: 6, color: '0066cc', space: 10 },
+          },
+          spacing: { after: 120 },
+        })
+      );
+    }
+    // Horizontal rule
+    else if (line.match(/^(-{3,}|\*{3,}|_{3,})$/)) {
+      children.push(
+        new docx.Paragraph({
+          children: [],
+          border: {
+            bottom: { style: docx.BorderStyle.SINGLE, size: 1, color: 'CCCCCC', space: 10 },
+          },
+          spacing: { before: 200, after: 200 },
+        })
+      );
+    }
+    // Code block
+    else if (line.startsWith('```')) {
+      i++;
+      const codeLines: string[] = [];
+      while (i < lines.length && !lines[i].startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      children.push(
+        new docx.Paragraph({
+          children: [
+            new docx.TextRun({
+              text: codeLines.join('\n'),
+              font: 'Courier New',
+              size: 20,
+            }),
+          ],
+          shading: { type: docx.ShadingType.SOLID, color: 'F6F8FA' },
+          spacing: { before: 120, after: 120 },
+        })
+      );
+    }
+    // Empty line
+    else if (line.trim() === '') {
+      children.push(new docx.Paragraph({ children: [], spacing: { after: 120 } }));
+    }
+    // Regular paragraph
+    else {
+      children.push(
+        new docx.Paragraph({
+          children: parseInlineMarkdown(docx, line),
+          spacing: { after: 160 },
+        })
+      );
+    }
+
+    i++;
+  }
+
+  const doc = new docx.Document({
+    numbering: {
+      config: [
+        {
+          reference: 'default-numbering',
+          levels: [
+            {
+              level: 0,
+              format: docx.LevelFormat.DECIMAL,
+              text: '%1.',
+              alignment: docx.AlignmentType.START,
+            },
+          ],
+        },
+      ],
+    },
+    sections: [{ children }],
+  });
+
+  return await docx.Packer.toBlob(doc);
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function parseInlineMarkdown(docx: any, text: string): any[] {
+  const runs: any[] = [];
+  // Regex to detect **bold**, *italic*, `code`, ~~strikethrough~~
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|~~(.+?)~~|([^*`~]+))/g;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match[2]) {
+      // Bold
+      runs.push(new docx.TextRun({ text: match[2], bold: true, size: 24 }));
+    } else if (match[3]) {
+      // Italic
+      runs.push(new docx.TextRun({ text: match[3], italics: true, size: 24 }));
+    } else if (match[4]) {
+      // Code
+      runs.push(
+        new docx.TextRun({ text: match[4], font: 'Courier New', size: 22, color: 'C7254E' })
+      );
+    } else if (match[5]) {
+      // Strikethrough
+      runs.push(new docx.TextRun({ text: match[5], strike: true, size: 24 }));
+    } else if (match[6]) {
+      // Plain text
+      runs.push(new docx.TextRun({ text: match[6], size: 24 }));
+    }
+  }
+
+  if (runs.length === 0) {
+    runs.push(new docx.TextRun({ text, size: 24 }));
+  }
+
+  return runs;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
+/* ============================================
    Source → HTML conversions
    ============================================ */
 
 async function docxToHtml(file: File): Promise<string> {
   const mammoth = await import('mammoth');
   const arrayBuffer = await readFileAsArrayBuffer(file);
-  const result = await mammoth.convertToHtml({
-    arrayBuffer,
-  });
+  const result = await mammoth.convertToHtml({ arrayBuffer });
   return result.value;
 }
 
@@ -216,6 +421,11 @@ async function docxToText(file: File): Promise<string> {
   const arrayBuffer = await readFileAsArrayBuffer(file);
   const result = await mammoth.extractRawText({ arrayBuffer });
   return result.value;
+}
+
+async function docxToMarkdown(file: File): Promise<string> {
+  const bodyHtml = await docxToHtml(file);
+  return htmlToMarkdown(bodyHtml);
 }
 
 async function markdownToHtml(text: string): Promise<string> {
@@ -230,7 +440,6 @@ function htmlToText(html: string): string {
 }
 
 function htmlToMarkdown(html: string): string {
-  // Parse properly using DOMParser for reliable conversion
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
@@ -238,7 +447,6 @@ function htmlToMarkdown(html: string): string {
     if (node.nodeType === Node.TEXT_NODE) {
       return node.textContent || '';
     }
-
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
 
     const el = node as Element;
@@ -293,32 +501,20 @@ function htmlToMarkdown(html: string): string {
       case 'table': {
         const rows = Array.from(el.querySelectorAll('tr'));
         if (rows.length === 0) return children;
-
         const tableData: string[][] = rows.map(row =>
           Array.from(row.querySelectorAll('th, td')).map(cell => walk(cell).trim())
         );
-
         if (tableData.length === 0) return '';
-
         const colCount = Math.max(...tableData.map(r => r.length));
         const colWidths = Array.from({ length: colCount }, (_, i) =>
           Math.max(3, ...tableData.map(r => (r[i] || '').length))
         );
-
         const formatRow = (row: string[]) =>
           '| ' + colWidths.map((w, i) => (row[i] || '').padEnd(w)).join(' | ') + ' |';
-
         const separator = '| ' + colWidths.map(w => '-'.repeat(w)).join(' | ') + ' |';
-
         const lines = [formatRow(tableData[0]), separator, ...tableData.slice(1).map(formatRow)];
         return lines.join('\n') + '\n\n';
       }
-      case 'div':
-      case 'section':
-      case 'article':
-      case 'main':
-      case 'span':
-        return children;
       default:
         return children;
     }
@@ -328,34 +524,61 @@ function htmlToMarkdown(html: string): string {
 }
 
 /* ============================================
+   RTF → text (basic extraction)
+   ============================================ */
+
+function rtfToText(rtf: string): string {
+  // Strip RTF control words and groups, extract plain text
+  let text = rtf;
+  // Remove header up to first \pard
+  const pardIndex = text.indexOf('\\pard');
+  if (pardIndex > 0) {
+    // Keep content from first \pard onwards but strip the \pard itself
+    text = text.substring(pardIndex);
+  }
+  // Handle common RTF escapes
+  text = text.replace(/\\par\b/g, '\n');
+  text = text.replace(/\\tab\b/g, '\t');
+  text = text.replace(/\\line\b/g, '\n');
+  text = text.replace(/\\\n/g, '\n');
+  text = text.replace(/\\pard[^\\]*/g, '');
+  // Remove {\*\...} groups (destinations we don't care about)
+  text = text.replace(/\{\\\*\\[^}]*\}/g, '');
+  // Remove remaining RTF commands (\word or \wordN)
+  text = text.replace(/\\[a-z]+\d*\s?/gi, '');
+  // Remove braces
+  text = text.replace(/[{}]/g, '');
+  // Handle unicode escapes \\uN
+  text = text.replace(/\\u(\d+)\??/g, (_, code) => String.fromCharCode(parseInt(code)));
+  // Handle hex escapes \\'XX
+  text = text.replace(/\\'([0-9a-fA-F]{2})/g, (_, hex) =>
+    String.fromCharCode(parseInt(hex, 16))
+  );
+  // Clean up
+  text = text.replace(/\r\n/g, '\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
+
+/* ============================================
    HTML → PDF via jsPDF.html()
-   
-   Renders a styled HTML document into a real
-   PDF by injecting it into a hidden DOM container
-   and using jsPDF's html() method (backed by
-   html2canvas) to capture the visual rendering.
    ============================================ */
 
 async function renderHtmlToPdf(htmlContent: string): Promise<Blob> {
   const { jsPDF } = await import('jspdf');
-  // html2canvas-pro is imported for its side-effect:
-  // jsPDF.html() looks for it on the window/global scope
   const html2canvas = (await import('html2canvas-pro')).default;
 
-  // Create a hidden container for rendering
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.left = '-10000px';
   container.style.top = '0';
-  container.style.width = '794px'; // A4 width in px at 96dpi
+  container.style.width = '794px';
   container.style.background = '#ffffff';
   container.style.zIndex = '-9999';
 
-  // Parse the HTML and inject just the body + styles
   const parser = new DOMParser();
   const parsed = parser.parseFromString(htmlContent, 'text/html');
 
-  // Apply styles inline
   const styleEl = parsed.querySelector('style');
   const bodyContent = parsed.body.innerHTML;
 
@@ -375,19 +598,15 @@ async function renderHtmlToPdf(htmlContent: string): Promise<Blob> {
   container.appendChild(content);
 
   document.body.appendChild(container);
-
-  // Wait for fonts/images to load
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   try {
-    // A4 dimensions in mm: 210 x 297
     const pdfWidth = 210;
     const pdfHeight = 297;
-    const margin = 15; // mm
+    const margin = 15;
 
-    // Capture the rendered content as a canvas
     const canvas = await html2canvas(content, {
-      scale: 2, // Higher resolution
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
@@ -395,7 +614,6 @@ async function renderHtmlToPdf(htmlContent: string): Promise<Blob> {
       windowWidth: 794,
     });
 
-    // Calculate how the content maps to PDF pages
     const imgWidth = pdfWidth - margin * 2;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -403,57 +621,27 @@ async function renderHtmlToPdf(htmlContent: string): Promise<Blob> {
     const pageContentHeight = pdfHeight - margin * 2;
 
     if (imgHeight <= pageContentHeight) {
-      // Single page — fits entirely
-      doc.addImage(
-        canvas.toDataURL('image/jpeg', 0.95),
-        'JPEG',
-        margin,
-        margin,
-        imgWidth,
-        imgHeight
-      );
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, imgWidth, imgHeight);
     } else {
-      // Multi-page — slice the canvas into page-sized chunks
       const totalPages = Math.ceil(imgHeight / pageContentHeight);
-
       for (let page = 0; page < totalPages; page++) {
         if (page > 0) doc.addPage();
-
-        // Calculate the portion of the source canvas for this page
         const sourceY = (page * pageContentHeight * canvas.width) / imgWidth;
         const sourceHeight = Math.min(
           (pageContentHeight * canvas.width) / imgWidth,
           canvas.height - sourceY
         );
-
-        // Create a canvas slice for this page
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = canvas.width;
         pageCanvas.height = sourceHeight;
-
         const ctx = pageCanvas.getContext('2d');
         if (ctx) {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-          ctx.drawImage(
-            canvas,
-            0, sourceY,
-            canvas.width, sourceHeight,
-            0, 0,
-            canvas.width, sourceHeight
-          );
+          ctx.drawImage(canvas, 0, sourceY, canvas.width, sourceHeight, 0, 0, canvas.width, sourceHeight);
         }
-
         const sliceHeight = (sourceHeight * imgWidth) / canvas.width;
-
-        doc.addImage(
-          pageCanvas.toDataURL('image/jpeg', 0.95),
-          'JPEG',
-          margin,
-          margin,
-          imgWidth,
-          sliceHeight
-        );
+        doc.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, imgWidth, sliceHeight);
       }
     }
 
@@ -464,9 +652,7 @@ async function renderHtmlToPdf(htmlContent: string): Promise<Blob> {
 }
 
 /* ============================================
-   Plain text → PDF (for .txt files)
-   Still uses jsPDF.text() since plain text
-   has no formatting to preserve.
+   Plain text → PDF
    ============================================ */
 
 async function plainTextToPdf(text: string): Promise<Blob> {
@@ -493,37 +679,11 @@ async function plainTextToPdf(text: string): Promise<Blob> {
 }
 
 /* ============================================
-   PDF → Text extraction
-   ============================================ */
-
-async function pdfToText(file: File): Promise<string> {
-  const { PDFDocument } = await import('pdf-lib');
-  const arrayBuffer = await readFileAsArrayBuffer(file);
-  const pdfDoc = await PDFDocument.load(arrayBuffer);
-  const pages = pdfDoc.getPages();
-
-  let text = `PDF Document: ${file.name}\n`;
-  text += `Pages: ${pages.length}\n\n`;
-
-  const form = pdfDoc.getForm();
-  try {
-    const fields = form.getFields();
-    if (fields.length > 0) {
-      text += `Form Fields:\n`;
-      fields.forEach((field) => {
-        text += `- ${field.getName()}\n`;
-      });
-    }
-  } catch {
-    // No form fields
-  }
-
-  text += `\nNote: Full text extraction from PDF requires OCR. This extracts metadata and structure.\n`;
-  return text;
-}
-
-/* ============================================
-   Main export
+   Main export — full conversion matrix
+   
+   Source formats: pdf, docx, md, html, htm, txt, rtf
+   Each can convert to: pdf, docx, html, md, txt
+   (minus converting to its own format)
    ============================================ */
 
 export async function convertDocument(
@@ -538,7 +698,29 @@ export async function convertDocument(
 
   onProgress?.(30);
 
+  // Strategy: convert source → intermediate (text or HTML), then intermediate → target
   switch (sourceExt) {
+    /* ---- PDF source ---- */
+    case 'pdf': {
+      if (targetFormat === 'txt') {
+        const text = await pdfToText(file);
+        resultBlob = new Blob([text], { type: 'text/plain' });
+      } else if (targetFormat === 'html') {
+        const html = await pdfToHtml(file);
+        resultBlob = new Blob([html], { type: 'text/html' });
+      } else if (targetFormat === 'md') {
+        const md = await pdfToMarkdown(file);
+        resultBlob = new Blob([md], { type: 'text/markdown' });
+      } else if (targetFormat === 'docx') {
+        onProgress?.(50);
+        resultBlob = await pdfToDocx(file);
+      } else {
+        throw new Error(`Unsupported: pdf → ${targetFormat}`);
+      }
+      break;
+    }
+
+    /* ---- DOCX source ---- */
     case 'docx': {
       if (targetFormat === 'html') {
         const bodyHtml = await docxToHtml(file);
@@ -547,6 +729,9 @@ export async function convertDocument(
       } else if (targetFormat === 'txt') {
         const text = await docxToText(file);
         resultBlob = new Blob([text], { type: 'text/plain' });
+      } else if (targetFormat === 'md') {
+        const md = await docxToMarkdown(file);
+        resultBlob = new Blob([md], { type: 'text/markdown' });
       } else if (targetFormat === 'pdf') {
         onProgress?.(40);
         const bodyHtml = await docxToHtml(file);
@@ -554,11 +739,12 @@ export async function convertDocument(
         onProgress?.(60);
         resultBlob = await renderHtmlToPdf(styledHtml);
       } else {
-        throw new Error(`Unsupported: docx to ${targetFormat}`);
+        throw new Error(`Unsupported: docx → ${targetFormat}`);
       }
       break;
     }
 
+    /* ---- Markdown source ---- */
     case 'md': {
       const mdText = await readFileAsText(file);
       if (targetFormat === 'html') {
@@ -572,23 +758,24 @@ export async function convertDocument(
         onProgress?.(60);
         resultBlob = await renderHtmlToPdf(styledHtml);
       } else if (targetFormat === 'txt') {
-        // Strip markdown syntax for plain text
         const bodyHtml = await markdownToHtml(mdText);
         const text = htmlToText(bodyHtml);
         resultBlob = new Blob([text], { type: 'text/plain' });
+      } else if (targetFormat === 'docx') {
+        onProgress?.(50);
+        resultBlob = await markdownToDocx(mdText);
       } else {
-        throw new Error(`Unsupported: md to ${targetFormat}`);
+        throw new Error(`Unsupported: md → ${targetFormat}`);
       }
       break;
     }
 
+    /* ---- HTML source ---- */
     case 'html':
     case 'htm': {
       const rawHtml = await readFileAsText(file);
       if (targetFormat === 'pdf') {
         onProgress?.(40);
-        // If the HTML already has a <style> or is a full document, use as-is
-        // Otherwise wrap it in our styled wrapper
         const hasFullDoc = rawHtml.toLowerCase().includes('<!doctype') || rawHtml.toLowerCase().includes('<html');
         const htmlForPdf = hasFullDoc ? rawHtml : wrapInStyledHtml(rawHtml, file.name);
         onProgress?.(60);
@@ -599,12 +786,16 @@ export async function convertDocument(
       } else if (targetFormat === 'md') {
         const md = htmlToMarkdown(rawHtml);
         resultBlob = new Blob([md], { type: 'text/markdown' });
+      } else if (targetFormat === 'docx') {
+        onProgress?.(50);
+        resultBlob = await htmlToDocx(rawHtml);
       } else {
-        throw new Error(`Unsupported: html to ${targetFormat}`);
+        throw new Error(`Unsupported: html → ${targetFormat}`);
       }
       break;
     }
 
+    /* ---- TXT source ---- */
     case 'txt': {
       const text = await readFileAsText(file);
       if (targetFormat === 'pdf') {
@@ -614,19 +805,40 @@ export async function convertDocument(
         const styledHtml = wrapInStyledHtml(bodyHtml, file.name);
         resultBlob = new Blob([styledHtml], { type: 'text/html' });
       } else if (targetFormat === 'md') {
+        // Plain text is valid markdown
         resultBlob = new Blob([text], { type: 'text/markdown' });
+      } else if (targetFormat === 'docx') {
+        onProgress?.(50);
+        resultBlob = await textToDocx(text);
       } else {
-        throw new Error(`Unsupported: txt to ${targetFormat}`);
+        throw new Error(`Unsupported: txt → ${targetFormat}`);
       }
       break;
     }
 
-    case 'pdf': {
+    /* ---- RTF source ---- */
+    case 'rtf': {
+      const rtfContent = await readFileAsText(file);
+      const plainText = rtfToText(rtfContent);
       if (targetFormat === 'txt') {
-        const text = await pdfToText(file);
-        resultBlob = new Blob([text], { type: 'text/plain' });
+        resultBlob = new Blob([plainText], { type: 'text/plain' });
+      } else if (targetFormat === 'html') {
+        const bodyHtml = plainText
+          .split(/\n\n+/)
+          .filter(Boolean)
+          .map((p) => `<p>${escapeHtml(p)}</p>`)
+          .join('\n');
+        resultBlob = new Blob([wrapInStyledHtml(bodyHtml, file.name)], { type: 'text/html' });
+      } else if (targetFormat === 'md') {
+        resultBlob = new Blob([plainText], { type: 'text/markdown' });
+      } else if (targetFormat === 'pdf') {
+        onProgress?.(50);
+        resultBlob = await plainTextToPdf(plainText);
+      } else if (targetFormat === 'docx') {
+        onProgress?.(50);
+        resultBlob = await textToDocx(plainText);
       } else {
-        throw new Error(`Unsupported: pdf to ${targetFormat}`);
+        throw new Error(`Unsupported: rtf → ${targetFormat}`);
       }
       break;
     }
