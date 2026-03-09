@@ -585,6 +585,138 @@ function FinderWindow() {
   );
 }
 
+/* ─── TUI File Rows (simulated Bubble Tea interface) ─── */
+
+const tuiFiles = [
+  { icon: '\u{1F5BC}', name: 'vacation-photo.heic', ext: 'HEIC', size: '2.4 MB', target: 'webp', category: '#f472b6', selected: true },
+  { icon: '\u{1F4C4}', name: 'quarterly-report.docx', ext: 'DOCX', size: '1.8 MB', target: 'pdf', category: '#60a5fa', selected: true },
+  { icon: '\u{1F3B5}', name: 'podcast-episode.flac', ext: 'FLAC', size: '48 MB', target: 'mp3', category: '#a78bfa', selected: true },
+  { icon: '\u{1F4CA}', name: 'user-analytics.csv', ext: 'CSV', size: '340 KB', target: 'json', category: '#34d399', selected: true },
+  { icon: '\u{1F3AC}', name: 'screen-recording.mov', ext: 'MOV', size: '126 MB', target: 'mp4', category: '#fb923c', selected: true },
+  { icon: '\u{1F524}', name: 'brand-font.ttf', ext: 'TTF', size: '420 KB', target: 'woff2', category: '#2dd4bf', selected: false },
+];
+
+type TUIStatus = 'idle' | 'converting' | 'done';
+
+function TUIFileRows() {
+  const [cursorIdx, setCursorIdx] = useState(0);
+  const [statuses, setStatuses] = useState<TUIStatus[]>(Array(tuiFiles.length).fill('idle'));
+  const cycleRef = useRef(0);
+
+  useEffect(() => {
+    // Animate: cycle cursor down, then run a conversion animation, then reset
+    const cycle = () => {
+      const thisCycle = ++cycleRef.current;
+
+      // Phase 1: Cursor moves down the list
+      tuiFiles.forEach((_, i) => {
+        setTimeout(() => {
+          if (cycleRef.current !== thisCycle) return;
+          setCursorIdx(i);
+        }, i * 400);
+      });
+
+      // Phase 2: Start conversion sequence after cursor finishes
+      const convStart = tuiFiles.length * 400 + 600;
+      tuiFiles.forEach((f, i) => {
+        if (!f.selected) return;
+        setTimeout(() => {
+          if (cycleRef.current !== thisCycle) return;
+          setStatuses(prev => { const n = [...prev]; n[i] = 'converting'; return n; });
+        }, convStart + i * 500);
+        setTimeout(() => {
+          if (cycleRef.current !== thisCycle) return;
+          setStatuses(prev => { const n = [...prev]; n[i] = 'done'; return n; });
+        }, convStart + i * 500 + 800);
+      });
+
+      // Phase 3: Reset after all done
+      const totalTime = convStart + tuiFiles.length * 500 + 2500;
+      setTimeout(() => {
+        if (cycleRef.current !== thisCycle) return;
+        setStatuses(Array(tuiFiles.length).fill('idle'));
+        setCursorIdx(0);
+        cycle();
+      }, totalTime);
+    };
+
+    cycle();
+    return () => { cycleRef.current++; };
+  }, []);
+
+  return (
+    <div>
+      {tuiFiles.map((f, i) => {
+        const isCursor = i === cursorIdx;
+        const status = statuses[i];
+        return (
+          <div
+            key={f.name}
+            className="flex items-center px-4 py-[3px] transition-colors duration-150"
+            style={{ background: isCursor ? '#f8f0e6' : 'transparent' }}
+          >
+            {/* Cursor + checkbox */}
+            <div className="w-6 flex-shrink-0 text-[12px]">
+              {isCursor ? (
+                <span className="text-[#f472b6] font-bold">{'>'}</span>
+              ) : (
+                <span>{' '}</span>
+              )}
+            </div>
+            <div className="w-4 flex-shrink-0 text-[12px]">
+              {f.selected ? (
+                <span className="text-[#34d399]">{'\u25CF'}</span>
+              ) : (
+                <span className="text-[#bfa98a]">{'\u25CB'}</span>
+              )}
+            </div>
+
+            {/* Icon + ext badge + name */}
+            <div className="flex-1 flex items-center gap-1.5 min-w-0 pl-1">
+              <span className="text-[11px]">{f.icon}</span>
+              <span className="font-bold text-[10px]" style={{ color: f.category }}>{f.ext}</span>
+              <span className={`text-[12px] truncate ${isCursor ? 'font-bold text-[#2d1f14]' : 'text-[#2d1f14]'}`}>
+                {f.name}
+              </span>
+            </div>
+
+            {/* Size */}
+            <div className="w-[72px] text-right text-[#bfa98a] text-[11px] flex-shrink-0 hidden sm:block">
+              {f.size}
+            </div>
+
+            {/* Format selector */}
+            <div className="w-[100px] text-center flex-shrink-0">
+              {isCursor ? (
+                <span>
+                  <span className="text-[#bfa98a]">{'< '}</span>
+                  <span className="text-[#f472b6] font-bold">{f.target}</span>
+                  <span className="text-[#bfa98a]">{' >'}</span>
+                </span>
+              ) : (
+                <span className="text-[#2d1f14]">{f.target}</span>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="w-[80px] text-center flex-shrink-0">
+              {status === 'idle' && (
+                <span className="text-[#bfa98a] italic">idle</span>
+              )}
+              {status === 'converting' && (
+                <span className="text-[#f472b6] font-bold animate-pulse">converting...</span>
+              )}
+              {status === 'done' && (
+                <span className="text-[#34d399] font-bold">done</span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 
 export default function LandingPage() {
@@ -963,12 +1095,12 @@ export default function LandingPage() {
             Prefer the command line?
           </h2>
           <p className="text-[17px] text-text-mid leading-relaxed max-w-[520px]">
-            Transmute has a full-featured CLI with an interactive TUI. Batch convert files, use glob patterns, pipe into scripts.
+            A full interactive TUI. Navigate files, pick formats, and batch convert without leaving your terminal.
           </p>
         </motion.div>
 
         <motion.div
-          className="w-full max-w-[640px]"
+          className="w-full max-w-[720px]"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
@@ -984,40 +1116,58 @@ export default function LandingPage() {
                 <div className="w-[11px] h-[11px] rounded-full bg-[#28c840] border border-[#1aab29]/40" />
               </div>
               <div className="flex-1 text-center">
-                <span className="text-[12px] font-mono text-[#888]">Terminal</span>
+                <span className="text-[12px] font-mono text-[#888]">transmute ./photos/</span>
               </div>
             </div>
 
-            {/* Terminal body */}
-            <div className="bg-[#1a1a1a] px-5 py-5 font-mono text-[13px] leading-relaxed">
-              {/* Install command */}
-              <div className="flex items-start gap-2 mb-4">
-                <span className="text-[#34d399] select-none font-bold">$</span>
-                <div>
-                  <span className="text-[#e2e2e2]">curl -fsSL </span>
-                  <span className="text-[#60a5fa]">https://raw.githubusercontent.com/noauf/Transmute/main/install.sh</span>
-                  <span className="text-[#e2e2e2]"> | </span>
-                  <span className="text-[#fb923c]">sh</span>
+            {/* TUI body — simulated Bubble Tea interface with cream bg */}
+            <div className="bg-[#fdf6ef] font-mono text-[12px] leading-[1.6] select-none">
+              {/* TUI title bar */}
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#f472b6] font-bold text-[13px]">transmute</span>
+                  <span className="text-[#8b7355]">6 files {'\u00B7'} 5 selected</span>
                 </div>
+                <span className="text-[#bfa98a] italic">? help</span>
               </div>
-              {/* Simulated output */}
-              <div className="text-[#666] text-[12px] mb-4 pl-4 border-l-2 border-[#333]">
-                <div>Transmute CLI installer</div>
-                <div>  OS: darwin  Arch: arm64</div>
-                <div>  Latest version: v0.1.0</div>
-                <div className="text-[#34d399]">  Installed transmute v0.1.0</div>
+
+              {/* Divider */}
+              <div className="px-4 text-[#e8e0d4]">{'\u2500'.repeat(80)}</div>
+
+              {/* Column header */}
+              <div className="flex items-center px-4 py-1 text-[11px] text-[#8b7355]">
+                <div className="flex-1 pl-6">Name</div>
+                <div className="w-[72px] text-right hidden sm:block">Size</div>
+                <div className="w-[100px] text-center">Convert to</div>
+                <div className="w-[80px] text-center">Status</div>
               </div>
-              {/* Usage examples */}
-              <div className="flex items-start gap-2 mb-1">
-                <span className="text-[#34d399] select-none font-bold">$</span>
-                <span className="text-[#e2e2e2]">transmute <span className="text-[#f472b6]">*.png</span></span>
+
+              {/* File rows */}
+              <TUIFileRows />
+
+              {/* Divider */}
+              <div className="px-4 text-[#e8e0d4]">{'\u2500'.repeat(80)}</div>
+
+              {/* Bottom bar */}
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="bg-[#f472b6] text-white font-bold text-[11px] px-3 py-0.5 rounded">
+                  Convert 5 files [c]
+                </span>
+                <span className="text-[#bfa98a] italic text-[11px] hidden sm:inline">
+                  up/down navigate  left/right format  space select  a all  q quit
+                </span>
+                <span className="text-[#bfa98a] italic text-[11px] sm:hidden">
+                  {'\u2191\u2193'} nav  {'\u2190\u2192'} fmt  spc sel  q quit
+                </span>
               </div>
-              <div className="text-[#666] text-[12px] mb-3 pl-4">Convert all PNGs in current directory</div>
-              <div className="flex items-start gap-2 mb-1">
-                <span className="text-[#34d399] select-none font-bold">$</span>
-                <span className="text-[#e2e2e2]">transmute <span className="text-[#f472b6]">./photos/</span> <span className="text-[#a78bfa]">-d</span> <span className="text-[#fb923c]">./output/</span></span>
-              </div>
-              <div className="text-[#666] text-[12px] pl-4">Batch convert a whole directory</div>
+            </div>
+          </div>
+
+          {/* Install command below the TUI */}
+          <div className="mt-6 rounded-xl overflow-hidden border border-[#2d2d2d] bg-[#1a1a1a]">
+            <div className="flex items-center gap-3 px-4 py-3 font-mono text-[13px]">
+              <span className="text-[#34d399] select-none font-bold">$</span>
+              <span className="text-[#e2e2e2] break-all">curl -fsSL <span className="text-[#60a5fa]">https://raw.githubusercontent.com/noauf/Transmute/main/install.sh</span> | <span className="text-[#fb923c]">sh</span></span>
             </div>
           </div>
         </motion.div>
