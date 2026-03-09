@@ -51,19 +51,42 @@ const flowSteps = [
   { inputIcon: '\u{1F3B5}', inputLabel: '.FLAC', outputIcon: '\u{1F3A7}', outputLabel: '.MP3' },
 ];
 
-/* ─── Terminal Simulation Data ─── */
+/* ─── Finder Window Data ─── */
 
-const terminalCommands = [
-  { cmd: 'transmute photo.heic --to webp', output: '  \u2713 photo.webp (2.4 MB \u2192 680 KB)', color: '#f472b6', time: 1800 },
-  { cmd: 'transmute report.docx --to pdf', output: '  \u2713 report.pdf (formatting preserved)', color: '#60a5fa', time: 2200 },
-  { cmd: 'transmute song.flac --to mp3 --quality 320k', output: '  \u2713 song.mp3 (48 MB \u2192 9.2 MB)', color: '#a78bfa', time: 2800 },
-  { cmd: 'transmute data.csv --to json', output: '  \u2713 data.json (2,847 rows parsed)', color: '#34d399', time: 1400 },
-  { cmd: 'transmute clip.mov --to mp4', output: '  \u2713 clip.mp4 (H.264, browser-native)', color: '#fb923c', time: 3200 },
-  { cmd: 'transmute design.psd --to png', output: '  \u2713 design.png (composite layer)', color: '#f472b6', time: 1600 },
-  { cmd: 'transmute book.epub --to pdf', output: '  \u2713 book.pdf (chapters preserved)', color: '#60a5fa', time: 2000 },
-  { cmd: 'transmute font.ttf --to woff2', output: '  \u2713 font.woff2 (compressed 62%)', color: '#34d399', time: 1200 },
-  { cmd: 'transmute slides.pptx --to html', output: '  \u2713 slides.html (12 slides)', color: '#a78bfa', time: 2400 },
-  { cmd: 'transmute sheet.xlsx --to csv', output: '  \u2713 sheet.csv (3 sheets merged)', color: '#34d399', time: 1500 },
+interface FinderFile {
+  icon: string;
+  name: string;
+  size: string;
+  targetFormat: string;
+  category: 'image' | 'document' | 'media' | 'data';
+  color: string;
+}
+
+const finderBatches: FinderFile[][] = [
+  [
+    { icon: '\u{1F5BC}', name: 'vacation-photo.heic', size: '2.4 MB', targetFormat: 'WebP', category: 'image', color: '#f472b6' },
+    { icon: '\u{1F4C4}', name: 'quarterly-report.docx', size: '1.8 MB', targetFormat: 'PDF', category: 'document', color: '#60a5fa' },
+    { icon: '\u{1F3B5}', name: 'podcast-episode.flac', size: '48 MB', targetFormat: 'MP3', category: 'media', color: '#a78bfa' },
+    { icon: '\u{1F4CA}', name: 'user-analytics.csv', size: '340 KB', targetFormat: 'JSON', category: 'data', color: '#34d399' },
+    { icon: '\u{1F3AC}', name: 'screen-recording.mov', size: '126 MB', targetFormat: 'MP4', category: 'media', color: '#fb923c' },
+    { icon: '\u{1F3A8}', name: 'hero-banner.psd', size: '18.4 MB', targetFormat: 'PNG', category: 'image', color: '#f472b6' },
+  ],
+  [
+    { icon: '\u{1F4D6}', name: 'sci-fi-novel.epub', size: '3.2 MB', targetFormat: 'PDF', category: 'document', color: '#60a5fa' },
+    { icon: '\u{1F524}', name: 'brand-font.ttf', size: '420 KB', targetFormat: 'WOFF2', category: 'data', color: '#34d399' },
+    { icon: '\u{1F4CA}', name: 'sales-figures.xlsx', size: '2.1 MB', targetFormat: 'CSV', category: 'data', color: '#34d399' },
+    { icon: '\u{1F39E}', name: 'product-demo.mkv', size: '340 MB', targetFormat: 'MP4', category: 'media', color: '#fb923c' },
+    { icon: '\u{1F4DD}', name: 'meeting-notes.md', size: '12 KB', targetFormat: 'HTML', category: 'document', color: '#60a5fa' },
+    { icon: '\u{1F5BC}', name: 'app-icon.svg', size: '8 KB', targetFormat: 'PNG', category: 'image', color: '#f472b6' },
+  ],
+  [
+    { icon: '\u{2699}', name: 'api-config.yaml', size: '24 KB', targetFormat: 'JSON', category: 'data', color: '#34d399' },
+    { icon: '\u{1F3B5}', name: 'voice-memo.wav', size: '32 MB', targetFormat: 'OGG', category: 'media', color: '#a78bfa' },
+    { icon: '\u{1F4C4}', name: 'thesis-draft.pdf', size: '5.6 MB', targetFormat: 'DOCX', category: 'document', color: '#60a5fa' },
+    { icon: '\u{1F5BC}', name: 'team-photo.png', size: '4.8 MB', targetFormat: 'WebP', category: 'image', color: '#f472b6' },
+    { icon: '\u{1F4CA}', name: 'inventory.json', size: '180 KB', targetFormat: 'CSV', category: 'data', color: '#34d399' },
+    { icon: '\u{1F3AC}', name: 'tutorial-clip.webm', size: '68 MB', targetFormat: 'GIF', category: 'media', color: '#fb923c' },
+  ],
 ];
 
 /* ─── Animation Variants ─── */
@@ -310,153 +333,239 @@ function ConversionFlow() {
   );
 }
 
-/* ─── Terminal Simulation Component ─── */
+/* ─── Finder Window Component ─── */
 
-interface TerminalLine {
-  type: 'prompt' | 'output' | 'blank';
-  text: string;
-  color?: string;
-}
+type FileStatus = 'idle' | 'converting' | 'done';
 
-function TerminalSimulation() {
-  const [lines, setLines] = useState<TerminalLine[]>([]);
-  const [currentTyping, setCurrentTyping] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const termRef = useRef<HTMLDivElement>(null);
-  const cmdIndexRef = useRef(0);
+function FinderWindow() {
+  const [batchIndex, setBatchIndex] = useState(0);
+  const [fileStatuses, setFileStatuses] = useState<FileStatus[]>(
+    Array(6).fill('idle')
+  );
   const runningRef = useRef(true);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const scrollToBottom = useCallback(() => {
-    if (termRef.current) {
-      termRef.current.scrollTop = termRef.current.scrollHeight;
-    }
+  const clearTimeouts = useCallback(() => {
+    timeoutRef.current.forEach(clearTimeout);
+    timeoutRef.current = [];
   }, []);
 
   useEffect(() => {
     runningRef.current = true;
 
-    const typeCommand = async (cmdObj: typeof terminalCommands[0]) => {
+    const runBatch = () => {
       if (!runningRef.current) return;
 
-      // Type the command character by character
-      setIsTyping(true);
-      for (let i = 0; i <= cmdObj.cmd.length; i++) {
-        if (!runningRef.current) return;
-        setCurrentTyping(cmdObj.cmd.slice(0, i));
-        await new Promise((r) => setTimeout(r, 30 + Math.random() * 40));
-      }
+      // Reset all to idle
+      setFileStatuses(Array(6).fill('idle'));
 
-      // Brief pause after typing
-      await new Promise((r) => setTimeout(r, 300));
-      if (!runningRef.current) return;
+      const batch = finderBatches[batchIndex % finderBatches.length];
 
-      // "Execute" — move command to lines, show output
-      setIsTyping(false);
-      setCurrentTyping('');
-      setLines((prev) => [
-        ...prev,
-        { type: 'prompt', text: cmdObj.cmd },
-        { type: 'output', text: cmdObj.output, color: cmdObj.color },
-      ]);
-      scrollToBottom();
-
-      // Pause before next command
-      await new Promise((r) => setTimeout(r, 1200));
-    };
-
-    const runLoop = async () => {
-      // Small initial delay
-      await new Promise((r) => setTimeout(r, 800));
-
-      while (runningRef.current) {
-        const cmd = terminalCommands[cmdIndexRef.current % terminalCommands.length];
-        await typeCommand(cmd);
-        cmdIndexRef.current++;
-
-        // After showing 6 commands, clear and start fresh to prevent infinite growth
-        if (cmdIndexRef.current % 6 === 0) {
-          await new Promise((r) => setTimeout(r, 600));
+      // Stagger: each file starts converting 600ms apart
+      batch.forEach((_, i) => {
+        // Start converting
+        const convertTimer = setTimeout(() => {
           if (!runningRef.current) return;
-          setLines([]);
-        }
-      }
+          setFileStatuses((prev) => {
+            const next = [...prev];
+            next[i] = 'converting';
+            return next;
+          });
+        }, 800 + i * 600);
+        timeoutRef.current.push(convertTimer);
+
+        // Finish converting (700-1200ms after start)
+        const doneTimer = setTimeout(() => {
+          if (!runningRef.current) return;
+          setFileStatuses((prev) => {
+            const next = [...prev];
+            next[i] = 'done';
+            return next;
+          });
+        }, 800 + i * 600 + 700 + Math.random() * 500);
+        timeoutRef.current.push(doneTimer);
+      });
+
+      // After all done, wait then move to next batch
+      const nextBatchTimer = setTimeout(() => {
+        if (!runningRef.current) return;
+        setBatchIndex((prev) => prev + 1);
+      }, 800 + batch.length * 600 + 1800);
+      timeoutRef.current.push(nextBatchTimer);
     };
 
-    runLoop();
+    runBatch();
 
     return () => {
       runningRef.current = false;
+      clearTimeouts();
     };
-  }, [scrollToBottom]);
+  }, [batchIndex, clearTimeouts]);
 
-  // Auto-scroll on new lines
-  useEffect(() => {
-    scrollToBottom();
-  }, [lines, currentTyping, scrollToBottom]);
+  const batch = finderBatches[batchIndex % finderBatches.length];
 
   return (
-    <div className="w-full max-w-[700px] mx-auto">
-      {/* Terminal window */}
-      <div className="rounded-xl overflow-hidden shadow-[0_8px_60px_rgba(0,0,0,0.25)] border border-white/[0.06]">
-        {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-[#1a1a2e]">
-          <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-            <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-            <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+    <div className="w-full max-w-[720px] mx-auto">
+      {/* Finder window */}
+      <div className="rounded-xl overflow-hidden shadow-[0_8px_48px_rgba(45,31,20,0.1)] border border-border-soft bg-white">
+
+        {/* ─ Title bar ─ */}
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-[#f6f6f6] border-b border-border-soft">
+          {/* Traffic lights */}
+          <div className="flex items-center gap-[6px]">
+            <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57] border border-[#e0443e]/40" />
+            <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e] border border-[#dea123]/40" />
+            <div className="w-[11px] h-[11px] rounded-full bg-[#28c840] border border-[#1aab29]/40" />
           </div>
-          <span className="flex-1 text-center font-mono text-[11px] text-white/30 tracking-wider">
-            transmute
-          </span>
+
+          {/* Navigation arrows */}
+          <div className="flex items-center gap-1 ml-1">
+            <div className="text-text-light/40">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+            </div>
+            <div className="text-text-light/40">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+            </div>
+          </div>
+
+          {/* Breadcrumb */}
+          <div className="flex-1 flex items-center justify-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-text-light/50">
+              <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <span className="text-[12px] font-medium text-text-mid">Transmute</span>
+            <span className="text-[12px] text-text-light/40">{'\u203A'}</span>
+            <span className="text-[12px] font-medium text-text-dark">Converting</span>
+          </div>
+
+          {/* View/search icons */}
+          <div className="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-text-light/40">
+              <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-text-light/40">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
         </div>
 
-        {/* Terminal body */}
-        <div
-          ref={termRef}
-          className="bg-[#0f0f1a] px-5 py-4 h-[320px] overflow-y-auto font-mono text-[13px] leading-[1.8] scroll-smooth"
-          style={{ scrollbarWidth: 'none' }}
-        >
-          {/* Welcome message */}
-          <div className="text-white/20 mb-2 select-none">
-            Transmute v1.0 {'\u2014'} 70+ formats, zero uploads
+        {/* ─ Column headers ─ */}
+        <div className="flex items-center px-4 py-1.5 bg-[#fafafa] border-b border-border-soft text-[11px] font-medium text-text-light tracking-wide uppercase select-none">
+          <div className="flex-1 pl-9">Name</div>
+          <div className="w-[70px] text-right">Size</div>
+          <div className="w-[120px] text-right pr-1">Status</div>
+        </div>
+
+        {/* ─ File rows ─ */}
+        <div className="divide-y divide-border-soft/50">
+          {batch.map((file, i) => {
+            const status = fileStatuses[i];
+            return (
+              <motion.div
+                key={`${batchIndex}-${i}`}
+                className="flex items-center px-4 py-2.5 hover:bg-[#fafafa] transition-colors"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] as const }}
+              >
+                {/* Icon + filename */}
+                <div className="flex-1 flex items-center gap-3 min-w-0">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[14px] flex-shrink-0"
+                    style={{ background: `${file.color}12` }}
+                  >
+                    {file.icon}
+                  </div>
+                  <span className="text-[13px] font-medium text-text-dark truncate">
+                    {file.name}
+                  </span>
+                </div>
+
+                {/* Size */}
+                <div className="w-[70px] text-right font-mono text-[11px] text-text-light flex-shrink-0">
+                  {file.size}
+                </div>
+
+                {/* Status */}
+                <div className="w-[120px] flex items-center justify-end gap-2 flex-shrink-0 pr-1">
+                  <AnimatePresence mode="wait">
+                    {status === 'idle' && (
+                      <motion.span
+                        key="idle"
+                        className="text-[11px] text-text-light/50 font-mono"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        queued
+                      </motion.span>
+                    )}
+                    {status === 'converting' && (
+                      <motion.div
+                        key="converting"
+                        className="flex items-center gap-1.5"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <motion.div
+                          className="w-3.5 h-3.5 rounded-full border-[1.5px] border-t-transparent"
+                          style={{ borderColor: file.color, borderTopColor: 'transparent' }}
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
+                        />
+                        <span className="text-[11px] font-mono font-medium" style={{ color: file.color }}>
+                          converting
+                        </span>
+                      </motion.div>
+                    )}
+                    {status === 'done' && (
+                      <motion.div
+                        key="done"
+                        className="flex items-center gap-1.5"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] as const }}
+                      >
+                        {/* Checkmark */}
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="text-mint flex-shrink-0">
+                          <circle cx="12" cy="12" r="10" fill="rgba(52,211,153,0.12)" stroke="currentColor" strokeWidth="1.5" />
+                          <path d="M8 12l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {/* Target format badge */}
+                        <span
+                          className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md"
+                          style={{ background: `${file.color}12`, color: file.color }}
+                        >
+                          .{file.targetFormat.toLowerCase()}
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* ─ Bottom bar ─ */}
+        <div className="flex items-center justify-between px-4 py-2 bg-[#fafafa] border-t border-border-soft">
+          <span className="text-[11px] text-text-light">
+            {batch.length} items
+          </span>
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-mint" />
+            <span className="text-[11px] text-text-light">
+              {fileStatuses.filter((s) => s === 'done').length} of {batch.length} converted
+            </span>
           </div>
-
-          {/* Completed lines */}
-          {lines.map((line, i) => (
-            <div key={i}>
-              {line.type === 'prompt' ? (
-                <div className="flex items-start gap-0">
-                  <span className="text-[#34d399] select-none">{'>'}</span>
-                  <span className="text-white/80 ml-2">{line.text}</span>
-                </div>
-              ) : line.type === 'output' ? (
-                <div style={{ color: line.color }} className="opacity-90">
-                  {line.text}
-                </div>
-              ) : null}
-            </div>
-          ))}
-
-          {/* Currently typing line */}
-          {(isTyping || currentTyping) && (
-            <div className="flex items-start gap-0">
-              <span className="text-[#34d399] select-none">{'>'}</span>
-              <span className="text-white/80 ml-2">{currentTyping}</span>
-              <span className="inline-block w-[2px] h-[16px] bg-[#34d399] ml-[1px] translate-y-[2px] animate-pulse" />
-            </div>
-          )}
-
-          {/* Idle cursor */}
-          {!isTyping && !currentTyping && (
-            <div className="flex items-start gap-0">
-              <span className="text-[#34d399] select-none">{'>'}</span>
-              <span className="inline-block w-[2px] h-[16px] bg-[#34d399] ml-2 translate-y-[2px] animate-pulse" />
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Format count below terminal */}
+      {/* Category format counts below window */}
       <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
         {[
           { label: 'Images', count: 11, color: '#f472b6' },
@@ -584,7 +693,7 @@ export default function LandingPage() {
         <ConversionFlow />
       </section>
 
-      {/* ──── FEATURES — TERMINAL SIMULATION ──── */}
+      {/* ──── FEATURES — FINDER WINDOW ──── */}
       <section
         id="features"
         className="relative z-10 flex flex-col items-center gap-10 px-6 py-20"
@@ -608,13 +717,13 @@ export default function LandingPage() {
         </motion.div>
 
         <motion.div
-          className="w-full max-w-[700px]"
+          className="w-full max-w-[720px]"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] as const }}
         >
-          <TerminalSimulation />
+          <FinderWindow />
         </motion.div>
 
         <motion.p
