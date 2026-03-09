@@ -51,68 +51,41 @@ const flowSteps = [
   { inputIcon: '\u{1F3B5}', inputLabel: '.FLAC', outputIcon: '\u{1F3A7}', outputLabel: '.MP3' },
 ];
 
-/* ─── Format Cloud Data ─── */
+/* ─── Format Marquee Data ─── */
 
-type FormatCategory = 'image' | 'document' | 'audio' | 'video' | 'data';
-
-const categoryMeta: Record<FormatCategory, { label: string; color: string; colorLight: string }> = {
-  image: { label: 'Images', color: '#f472b6', colorLight: 'rgba(244,114,182,0.10)' },
-  document: { label: 'Documents', color: '#60a5fa', colorLight: 'rgba(96,165,250,0.10)' },
-  audio: { label: 'Audio', color: '#a78bfa', colorLight: 'rgba(167,139,250,0.10)' },
-  video: { label: 'Video', color: '#fb923c', colorLight: 'rgba(251,146,60,0.10)' },
-  data: { label: 'Data & Fonts', color: '#34d399', colorLight: 'rgba(52,211,153,0.10)' },
-};
-
-const allFormats: { name: string; cat: FormatCategory; popular?: boolean }[] = [
-  // Images
-  { name: 'PNG', cat: 'image', popular: true },
-  { name: 'JPG', cat: 'image', popular: true },
-  { name: 'WebP', cat: 'image', popular: true },
-  { name: 'GIF', cat: 'image' },
-  { name: 'AVIF', cat: 'image' },
-  { name: 'SVG', cat: 'image', popular: true },
-  { name: 'PSD', cat: 'image' },
-  { name: 'HEIC', cat: 'image', popular: true },
-  { name: 'BMP', cat: 'image' },
-  { name: 'TIFF', cat: 'image' },
-  { name: 'ICO', cat: 'image' },
-  // Documents
-  { name: 'PDF', cat: 'document', popular: true },
-  { name: 'DOCX', cat: 'document', popular: true },
-  { name: 'MD', cat: 'document' },
-  { name: 'HTML', cat: 'document', popular: true },
-  { name: 'TXT', cat: 'document' },
-  { name: 'RTF', cat: 'document' },
-  { name: 'PPTX', cat: 'document', popular: true },
-  { name: 'EPUB', cat: 'document' },
-  // Audio
-  { name: 'MP3', cat: 'audio', popular: true },
-  { name: 'WAV', cat: 'audio', popular: true },
-  { name: 'OGG', cat: 'audio' },
-  { name: 'FLAC', cat: 'audio', popular: true },
-  { name: 'AAC', cat: 'audio' },
-  { name: 'M4A', cat: 'audio' },
-  // Video
-  { name: 'MP4', cat: 'video', popular: true },
-  { name: 'WebM', cat: 'video' },
-  { name: 'AVI', cat: 'video' },
-  { name: 'MOV', cat: 'video', popular: true },
-  { name: 'MKV', cat: 'video', popular: true },
-  // Data & Fonts
-  { name: 'CSV', cat: 'data', popular: true },
-  { name: 'JSON', cat: 'data', popular: true },
-  { name: 'XML', cat: 'data' },
-  { name: 'YAML', cat: 'data', popular: true },
-  { name: 'XLSX', cat: 'data', popular: true },
-  { name: 'TSV', cat: 'data' },
-  { name: 'TOML', cat: 'data' },
-  { name: 'INI', cat: 'data' },
-  { name: 'NDJSON', cat: 'data' },
-  { name: 'SQL', cat: 'data' },
-  { name: 'TTF', cat: 'data' },
-  { name: 'OTF', cat: 'data' },
-  { name: 'WOFF', cat: 'data' },
-  { name: 'WOFF2', cat: 'data' },
+const marqueeRows = [
+  {
+    label: 'Images',
+    color: '#f472b6',
+    colorLight: 'rgba(244,114,182,0.08)',
+    formats: ['PNG', 'JPG', 'WebP', 'GIF', 'AVIF', 'SVG', 'PSD', 'HEIC', 'BMP', 'TIFF', 'ICO'],
+    direction: 'left' as const,
+    speed: '35s',
+  },
+  {
+    label: 'Documents',
+    color: '#60a5fa',
+    colorLight: 'rgba(96,165,250,0.08)',
+    formats: ['PDF', 'DOCX', 'MD', 'HTML', 'TXT', 'RTF', 'PPTX', 'EPUB'],
+    direction: 'right' as const,
+    speed: '30s',
+  },
+  {
+    label: 'Audio & Video',
+    color: '#a78bfa',
+    colorLight: 'rgba(167,139,250,0.08)',
+    formats: ['MP3', 'WAV', 'OGG', 'FLAC', 'AAC', 'M4A', 'MP4', 'WebM', 'AVI', 'MOV', 'MKV'],
+    direction: 'left' as const,
+    speed: '38s',
+  },
+  {
+    label: 'Data & Fonts',
+    color: '#34d399',
+    colorLight: 'rgba(52,211,153,0.08)',
+    formats: ['CSV', 'JSON', 'XML', 'YAML', 'XLSX', 'TSV', 'TOML', 'INI', 'SQL', 'NDJSON', 'TTF', 'OTF', 'WOFF', 'WOFF2'],
+    direction: 'right' as const,
+    speed: '40s',
+  },
 ];
 
 /* ─── Animation Variants ─── */
@@ -467,13 +440,13 @@ export default function LandingPage() {
         <ConversionFlow />
       </section>
 
-      {/* ──── FEATURES — FORMAT CLOUD ──── */}
+      {/* ──── FEATURES — SCROLLING MARQUEE ──── */}
       <section
         id="features"
-        className="relative z-10 flex flex-col items-center gap-10 px-6 py-20"
+        className="relative z-10 flex flex-col items-center gap-10 px-0 py-20 overflow-hidden"
       >
         <motion.div
-          className="text-center flex flex-col items-center gap-3"
+          className="text-center flex flex-col items-center gap-3 px-6"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
@@ -490,72 +463,66 @@ export default function LandingPage() {
           </p>
         </motion.div>
 
-        {/* Category legend */}
-        <motion.div
-          className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2 }}
-        >
-          {(Object.entries(categoryMeta) as [FormatCategory, typeof categoryMeta[FormatCategory]][]).map(([key, meta]) => (
-            <div key={key} className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: meta.color }} />
-              <span className="font-mono text-[11px] font-semibold text-text-mid tracking-wide">{meta.label}</span>
-            </div>
-          ))}
-        </motion.div>
+        {/* Marquee rows */}
+        <div className="w-full flex flex-col gap-3">
+          {marqueeRows.map((row, rowIndex) => (
+            <motion.div
+              key={row.label}
+              className="relative"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: '-20px' }}
+              transition={{ duration: 0.5, delay: rowIndex * 0.1 }}
+            >
+              {/* Category label — pinned left */}
+              <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-4 sm:pl-6">
+                <span
+                  className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] px-2.5 py-1 rounded-md backdrop-blur-sm"
+                  style={{
+                    color: row.color,
+                    background: `${row.colorLight}`,
+                    border: `1px solid ${row.color}18`,
+                  }}
+                >
+                  {row.label}
+                </span>
+              </div>
 
-        {/* Format cloud */}
-        <motion.div
-          className="w-full max-w-[820px] flex flex-wrap items-center justify-center gap-2.5"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-40px' }}
-          variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.02 } },
-          }}
-        >
-          {allFormats.map((fmt) => {
-            const meta = categoryMeta[fmt.cat];
-            return (
-              <motion.span
-                key={fmt.name}
-                className={`inline-flex items-center font-mono font-bold rounded-xl border cursor-default select-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
-                  fmt.popular
-                    ? 'px-4 py-2 text-[13px] tracking-wide'
-                    : 'px-3 py-1.5 text-[11px] tracking-wider'
-                }`}
-                style={{
-                  color: meta.color,
-                  background: meta.colorLight,
-                  borderColor: `${meta.color}20`,
-                }}
-                variants={{
-                  hidden: { opacity: 0, scale: 0.7, y: 12 },
-                  visible: {
-                    opacity: 1,
-                    scale: 1,
-                    y: 0,
-                    transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] as const },
-                  },
-                }}
-                whileHover={{
-                  scale: 1.08,
-                  background: `${meta.color}20`,
-                  borderColor: `${meta.color}50`,
-                }}
-              >
-                .{fmt.name}
-              </motion.span>
-            );
-          })}
-        </motion.div>
+              {/* Fade edges */}
+              <div className="absolute left-0 top-0 bottom-0 w-28 sm:w-40 z-[5] pointer-events-none bg-[linear-gradient(to_right,var(--color-bg-cream)_30%,transparent)]" />
+              <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 z-[5] pointer-events-none bg-[linear-gradient(to_left,var(--color-bg-cream)_20%,transparent)]" />
+
+              {/* Scrolling track */}
+              <div className="overflow-hidden">
+                <div
+                  className={`flex items-center gap-3 w-max ${
+                    row.direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right'
+                  }`}
+                  style={{ '--marquee-duration': row.speed } as React.CSSProperties}
+                >
+                  {/* Duplicate the badges for seamless loop */}
+                  {[...row.formats, ...row.formats].map((fmt, i) => (
+                    <span
+                      key={`${fmt}-${i}`}
+                      className="inline-flex items-center px-4 py-2 font-mono text-[12px] font-bold rounded-xl border whitespace-nowrap select-none transition-all duration-200 hover:scale-105 hover:-translate-y-0.5 hover:shadow-md cursor-default"
+                      style={{
+                        color: row.color,
+                        background: row.colorLight,
+                        borderColor: `${row.color}20`,
+                      }}
+                    >
+                      .{fmt}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
 
         {/* Total count callout */}
         <motion.p
-          className="text-sm text-text-light font-mono tracking-wide"
+          className="text-sm text-text-light font-mono tracking-wide px-6"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}

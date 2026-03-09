@@ -130,3 +130,27 @@ body {
   background-position: right 10px center;
   padding-right: 28px;
 }
+
+/* ---- Marquee scroll for format rows ---- */
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+.animate-marquee-left {
+  animation: marquee-left var(--marquee-duration, 30s) linear infinite;
+}
+
+.animate-marquee-right {
+  animation: marquee-right var(--marquee-duration, 30s) linear infinite;
+}
+
+.animate-marquee-left:hover,
+.animate-marquee-right:hover {
+  animation-play-state: paused;
+}
