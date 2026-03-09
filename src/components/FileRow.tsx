@@ -72,9 +72,9 @@ export function FileRow({
           {formatFileSize(file.size)}
         </div>
 
-        {/* Format selector */}
+        {/* Format selector — always available (even after conversion) */}
         <div className="w-[140px] flex items-center justify-center flex-shrink-0">
-          {file.availableFormats.length > 0 && file.status !== 'done' ? (
+          {file.availableFormats.length > 0 && file.status !== 'converting' ? (
             <div className="flex items-center gap-1.5">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-light/40 flex-shrink-0">
                 <path d="M5 12h14M12 5l7 7-7 7" />
@@ -89,7 +89,7 @@ export function FileRow({
                 ))}
               </select>
             </div>
-          ) : file.status === 'done' ? (
+          ) : file.status === 'converting' ? (
             <span
               className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md"
               style={{ background: `${color}10`, color }}
@@ -339,13 +339,20 @@ function MobileStatus({
 
   if (file.status === 'done') {
     return (
-      <div className="flex items-center gap-1.5">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-mint flex-shrink-0">
-          <circle cx="12" cy="12" r="10" fill="rgba(52,211,153,0.12)" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M8 12l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+        {/* Format selector — pick a new format to convert again */}
+        <select
+          value={file.targetFormat || ''}
+          onChange={(e) => onSetFormat(file.id, e.target.value)}
+          className="font-mono text-[11px] font-bold text-text-dark bg-transparent px-1.5 py-0.5 rounded-md border border-border-soft/60 cursor-pointer focus:outline-none focus:border-pink/40 transition-all appearance-none select-arrow-warm"
+          style={{ maxWidth: '70px' }}
+        >
+          {file.availableFormats.map((fmt) => (
+            <option key={fmt} value={fmt}>.{fmt}</option>
+          ))}
+        </select>
         <button
-          className="flex items-center justify-center w-6 h-6 rounded-md bg-transparent border-none cursor-pointer text-text-light/50 active:text-purple transition-all"
+          className="flex items-center justify-center w-6 h-6 rounded-md bg-transparent border-none cursor-pointer text-text-light/50 active:text-purple transition-all flex-shrink-0"
           onClick={() => onPreview(file)}
           title="Preview"
         >
@@ -355,7 +362,7 @@ function MobileStatus({
           </svg>
         </button>
         <button
-          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-white bg-mint border-none rounded-md cursor-pointer shadow-[0_1px_4px_rgba(52,211,153,0.2)] transition-all"
+          className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-white bg-mint border-none rounded-md cursor-pointer shadow-[0_1px_4px_rgba(52,211,153,0.2)] transition-all flex-shrink-0"
           onClick={() => onDownload(file)}
           title="Download"
         >

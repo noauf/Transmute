@@ -175,10 +175,19 @@ export function useFileUpload() {
 
   const setTargetFormat = useCallback((id: string, format: string) => {
     setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, targetFormat: format } : f))
+      prev.map((f) => {
+        if (f.id !== id) return f;
+        // If the file was already converted, reset to idle so it can be converted again
+        const needsReset = f.status === 'done' || f.status === 'error';
+        return {
+          ...f,
+          targetFormat: format,
+          ...(needsReset ? { status: 'idle' as const, progress: 0, convertedBlob: undefined, convertedName: undefined, error: undefined } : {}),
+        };
+      })
     );
     // Sync to persistence
-    updatePersistedMeta(id, { targetFormat: format });
+    updatePersistedMeta(id, { targetFormat: format, status: 'idle' });
   }, []);
 
   const clearAll = useCallback(() => {
