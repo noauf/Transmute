@@ -57,6 +57,11 @@ func CategoryColor(cat string) color.Color {
 }
 
 // ─── Reusable styles ─────────────────────────────────────────
+//
+// IMPORTANT: Every style MUST have Background(ScreenBg) so the cream
+// background propagates through all ANSI sequences. Wrapping
+// already-styled text with a background style does NOT work because
+// inner escape sequences reset the background.
 
 var (
 	// Title bar
@@ -69,44 +74,53 @@ var (
 	// Header / breadcrumb
 	Breadcrumb = lipgloss.NewStyle().
 			Foreground(Mid).
+			Background(ScreenBg).
 			Bold(false)
 
 	BreadcrumbActive = lipgloss.NewStyle().
 				Foreground(Dark).
+				Background(ScreenBg).
 				Bold(true)
 
 	// File row
 	FileName = lipgloss.NewStyle().
 			Foreground(Dark).
+			Background(ScreenBg).
 			Bold(true)
 
 	FileSize = lipgloss.NewStyle().
-			Foreground(Light)
+			Foreground(Light).
+			Background(ScreenBg)
 
 	ExtBadge = func(c color.Color) lipgloss.Style {
 		return lipgloss.NewStyle().
 			Foreground(c).
+			Background(ScreenBg).
 			Bold(true)
 	}
 
 	// Status indicators
 	StatusIdle = lipgloss.NewStyle().
 			Foreground(Light).
+			Background(ScreenBg).
 			Italic(true)
 
 	StatusConverting = lipgloss.NewStyle().
 				Foreground(Pink).
+				Background(ScreenBg).
 				Bold(true)
 
 	StatusDone = lipgloss.NewStyle().
 			Foreground(Mint).
+			Background(ScreenBg).
 			Bold(true)
 
 	StatusError = lipgloss.NewStyle().
 			Foreground(Red).
+			Background(ScreenBg).
 			Bold(true)
 
-	// Buttons / actions
+	// Buttons / actions (these keep their own bg colors)
 	ButtonPrimary = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#ffffff")).
 			Background(Pink).
@@ -121,50 +135,67 @@ var (
 
 	// Progress bar
 	ProgressFilled = lipgloss.NewStyle().
-			Foreground(Pink)
+			Foreground(Pink).
+			Background(ScreenBg)
 
 	ProgressEmpty = lipgloss.NewStyle().
-			Foreground(BorderCl)
+			Foreground(BorderCl).
+			Background(ScreenBg)
 
 	// Help / footer
 	Help = lipgloss.NewStyle().
 		Foreground(Light).
+		Background(ScreenBg).
 		Italic(true)
 
 	// Cursor / selection
 	Selected = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(Pink)
+			Foreground(Pink).
+			Background(ScreenBg)
 
 	Unselected = lipgloss.NewStyle().
-			Foreground(Dark)
+			Foreground(Dark).
+			Background(ScreenBg)
 
 	// Divider
 	Divider = lipgloss.NewStyle().
-		Foreground(BorderCl)
+		Foreground(BorderCl).
+		Background(ScreenBg)
 
 	// Logo / branding
 	Logo = lipgloss.NewStyle().
 		Foreground(Pink).
+		Background(ScreenBg).
 		Bold(true)
 )
 
-// PadLine pads a single rendered line to the full terminal width and applies
-// the cream background behind ALL content (not just the padding). This is
-// achieved by placing the line inside a full-width style with Background set.
+// BgStyle returns a plain style with just the cream background, useful
+// for spacing characters that need to carry the background color.
+var BgStyle = lipgloss.NewStyle().Background(ScreenBg)
+
+// WarmBgStyle returns a plain style with the warm highlight background.
+var WarmBgStyle = lipgloss.NewStyle().Background(Warm)
+
+// PadLine pads a single rendered line to the full terminal width with
+// cream background spaces on the right edge.
 func PadLine(line string, width int) string {
-	return PadLineWithBg(line, width, ScreenBg)
+	w := lipgloss.Width(line)
+	if w >= width {
+		return line
+	}
+	pad := BgStyle.Render(strings.Repeat(" ", width-w))
+	return line + pad
 }
 
 // PadLineWithBg pads a line to full width with a specific background color.
 func PadLineWithBg(line string, width int, bg color.Color) string {
 	w := lipgloss.Width(line)
 	if w >= width {
-		// Even if the line is already wide enough, wrap with background
-		return lipgloss.NewStyle().Background(bg).Render(line)
+		return line
 	}
-	pad := strings.Repeat(" ", width-w)
-	return lipgloss.NewStyle().Background(bg).Render(line + pad)
+	pad := lipgloss.NewStyle().Background(bg).Render(strings.Repeat(" ", width-w))
+	return line + pad
 }
 
 // FillBlankLines returns n blank lines fully painted with the screen
@@ -173,9 +204,7 @@ func FillBlankLines(n, width int) string {
 	if n <= 0 {
 		return ""
 	}
-	blankLine := lipgloss.NewStyle().
-		Background(ScreenBg).
-		Render(strings.Repeat(" ", width))
+	blankLine := BgStyle.Render(strings.Repeat(" ", width))
 	lines := make([]string, n)
 	for i := range lines {
 		lines[i] = blankLine
