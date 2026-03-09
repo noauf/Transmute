@@ -105,11 +105,19 @@ function escapeHtml(text: string): string {
 async function pdfToText(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist');
 
-  // Use the bundled worker
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+  // Try loading the worker from CDN; if it fails, run without worker (main thread)
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+  } catch {
+    // Worker setup failed — pdfjs will run on main thread (slower but works)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+  }
 
   const arrayBuffer = await readFileAsArrayBuffer(file);
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await pdfjsLib.getDocument({
+    data: arrayBuffer,
+    useSystemFonts: true,
+  }).promise;
 
   const textParts: string[] = [];
 

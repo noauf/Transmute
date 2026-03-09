@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { DropZone } from '@/components/DropZone';
 import { FileCard } from '@/components/FileCard';
+import { PreviewModal } from '@/components/PreviewModal';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { useConversion } from '@/hooks/useConversion';
 import { formatFileSize } from '@/lib/utils';
+import { UploadedFile } from '@/types';
 
 export default function ConvertPage() {
   const {
@@ -31,6 +34,8 @@ export default function ConvertPage() {
     downloadFile,
     downloadAllAsZip,
   } = useConversion(updateFile);
+
+  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
 
   const hasFiles = files.length > 0;
   const convertableCount = files.filter(
@@ -86,6 +91,7 @@ export default function ConvertPage() {
                 onSetFormat={setTargetFormat}
                 onRemove={removeFile}
                 onDownload={downloadFile}
+                onPreview={setPreviewFile}
               />
             ))}
           </AnimatePresence>
@@ -164,6 +170,15 @@ export default function ConvertPage() {
           </div>
         </motion.div>
       )}
+      {/* Preview Modal */}
+      <PreviewModal
+        file={previewFile}
+        onClose={() => setPreviewFile(null)}
+        onDownload={(f) => {
+          downloadFile(f);
+          setPreviewFile(null);
+        }}
+      />
     </div>
   );
 }

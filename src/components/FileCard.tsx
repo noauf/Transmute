@@ -11,6 +11,7 @@ interface FileCardProps {
   onSetFormat: (id: string, format: string) => void;
   onRemove: (id: string) => void;
   onDownload: (file: UploadedFile) => void;
+  onPreview: (file: UploadedFile) => void;
 }
 
 export function FileCard({
@@ -19,6 +20,7 @@ export function FileCard({
   onSetFormat,
   onRemove,
   onDownload,
+  onPreview,
 }: FileCardProps) {
   const categoryColor = CATEGORY_COLORS[file.category];
   const categoryLabel = CATEGORY_LABELS[file.category];
@@ -168,21 +170,35 @@ export function FileCard({
         </div>
       )}
 
-      {/* Download button */}
+      {/* Action buttons */}
       {file.status === 'done' && (
-        <div className="px-4 pb-4 pt-1">
+        <div className="flex items-center gap-2 px-4 pb-4 pt-1">
           <motion.button
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[13px] font-bold text-white bg-mint border-none rounded-xl cursor-pointer shadow-[0_2px_12px_rgba(52,211,153,0.2)] hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(52,211,153,0.3)] transition-all"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-[12px] font-bold text-text-dark bg-bg-warm border border-border-soft rounded-xl cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_2px_12px_rgba(180,140,100,0.1)] hover:border-border-med transition-all"
+            onClick={() => onPreview(file)}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Preview
+          </motion.button>
+          <motion.button
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-[12px] font-bold text-white bg-mint border-none rounded-xl cursor-pointer shadow-[0_2px_12px_rgba(52,211,153,0.2)] hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(52,211,153,0.3)] transition-all"
             onClick={() => onDownload(file)}
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
-            Download .{file.targetFormat}
+            .{file.targetFormat}
           </motion.button>
         </div>
       )}
