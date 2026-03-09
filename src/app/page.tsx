@@ -947,6 +947,108 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* ──── CLI / TERMINAL LOVERS ──── */}
+      <section className="relative z-10 flex flex-col items-center px-6 py-20">
+        <motion.div
+          className="text-center flex flex-col items-center gap-3 mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6 }}
+        >
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-purple/10 rounded-full font-mono text-[11px] font-semibold uppercase tracking-wider text-purple">
+            Terminal Lovers
+          </span>
+          <h2 className="font-serif font-extrabold text-[clamp(32px,5vw,48px)] leading-[1.1] tracking-tight text-text-dark">
+            Prefer the command line?
+          </h2>
+          <p className="text-[17px] text-text-mid leading-relaxed max-w-[520px]">
+            Transmute has a full-featured CLI with an interactive TUI. Batch convert files, use glob patterns, pipe into scripts.
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="w-full max-w-[640px]"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] as const }}
+        >
+          {/* Terminal window */}
+          <div className="rounded-xl overflow-hidden shadow-[0_8px_48px_rgba(45,31,20,0.12)] border border-[#2d2d2d]">
+            {/* Terminal title bar */}
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#1e1e1e] border-b border-[#333]">
+              <div className="flex items-center gap-[6px]">
+                <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57] border border-[#e0443e]/40" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e] border border-[#dea123]/40" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#28c840] border border-[#1aab29]/40" />
+              </div>
+              <div className="flex-1 text-center">
+                <span className="text-[12px] font-mono text-[#888]">Terminal</span>
+              </div>
+            </div>
+
+            {/* Terminal body */}
+            <div className="bg-[#1a1a1a] px-5 py-5 font-mono text-[13px] leading-relaxed">
+              {/* Install command */}
+              <div className="flex items-start gap-2 mb-4">
+                <span className="text-[#34d399] select-none font-bold">$</span>
+                <div>
+                  <span className="text-[#e2e2e2]">curl -fsSL </span>
+                  <span className="text-[#60a5fa]">https://raw.githubusercontent.com/noauf/Transmute/main/install.sh</span>
+                  <span className="text-[#e2e2e2]"> | </span>
+                  <span className="text-[#fb923c]">sh</span>
+                </div>
+              </div>
+              {/* Simulated output */}
+              <div className="text-[#666] text-[12px] mb-4 pl-4 border-l-2 border-[#333]">
+                <div>Transmute CLI installer</div>
+                <div>  OS: darwin  Arch: arm64</div>
+                <div>  Latest version: v0.1.0</div>
+                <div className="text-[#34d399]">  Installed transmute v0.1.0</div>
+              </div>
+              {/* Usage examples */}
+              <div className="flex items-start gap-2 mb-1">
+                <span className="text-[#34d399] select-none font-bold">$</span>
+                <span className="text-[#e2e2e2]">transmute <span className="text-[#f472b6]">*.png</span></span>
+              </div>
+              <div className="text-[#666] text-[12px] mb-3 pl-4">Convert all PNGs in current directory</div>
+              <div className="flex items-start gap-2 mb-1">
+                <span className="text-[#34d399] select-none font-bold">$</span>
+                <span className="text-[#e2e2e2]">transmute <span className="text-[#f472b6]">./photos/</span> <span className="text-[#a78bfa]">-d</span> <span className="text-[#fb923c]">./output/</span></span>
+              </div>
+              <div className="text-[#666] text-[12px] pl-4">Batch convert a whole directory</div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* CLI feature bullets */}
+        <motion.div
+          className="flex flex-wrap items-center justify-center gap-3 mt-8 max-w-[640px]"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+        >
+          {[
+            { label: 'Interactive TUI', color: '#f472b6' },
+            { label: 'Glob patterns', color: '#a78bfa' },
+            { label: 'Batch convert', color: '#60a5fa' },
+            { label: 'Auto-downloads ffmpeg', color: '#fb923c' },
+            { label: 'Self-update', color: '#34d399' },
+            { label: '70+ formats', color: '#2dd4bf' },
+          ].map((feat) => (
+            <span
+              key={feat.label}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-border-soft rounded-full text-[12px] font-medium text-text-mid shadow-[0_1px_3px_rgba(160,120,80,0.04)]"
+            >
+              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: feat.color }} />
+              {feat.label}
+            </span>
+          ))}
+        </motion.div>
+      </section>
+
       {/* ──── FOOTER CTA ──── */}
       <section className="relative z-10 flex flex-col items-center gap-6 px-6 pt-10 pb-6 text-center">
         <motion.h2

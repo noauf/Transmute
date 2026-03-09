@@ -1,0 +1,404 @@
+package tui
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/noauf/transmute-cli/internal/converter"
+	"github.com/noauf/transmute-cli/internal/detect"
+)
+
+// ─── State machine ───────────────────────────────────────────
+
+type state int
+
+const (
+	stateFileList   state = iota // Browsing/selecting files
+	stateConverting              // Conversion in progress
+	stateResults                 // Showing results
+)
+
+// ─── File entry ──────────────────────────────────────────────
+
+type fileEntry struct {
+	path         string
+	name         string
+	ext          string
+	size         int64
+	category     detect.FileCategory
+	selected     bool
+	targetFormat string
+	formats      []string
+	formatIdx    int
+	status       string // "idle", "converting", "done", "error"
+	error        string
+	outputPath   string
+}
+
+// ─── Messages ────────────────────────────────────────────────
+
+type conversionDoneMsg struct {
+	index  int
+	result converter.Result
+}
+
+type conversionStartMsg struct {
+	index int
+}
+
+type tickMsg time.Time
+
+// ─── Model ───────────────────────────────────────────────────
+
+type Model struct {
+	files     []fileEntry
+	cursor    int
+	state     state
+	keys      KeyMap
+	width     int
+	height    int
+	outputDir string
+	showHelp  bool
+	scroll    int // scroll offset for file list
+
+	// Progress tracking
+	converting  int
+	converted   int
+	totalToConv int
+	startTime   time.Time
+}
+
+// New creates a new TUI model from a list of file paths and an output directory.
+func New(paths []string, outputDir string) Model {
+	var files []fileEntry
+
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil {
+			continue
+		}
+		if info.IsDir() {
+			// Expand directory
+			dirFiles := expandDir(p)
+			files = append(files, dirFiles...)
+		} else {
+			entry := makeFileEntry(p, info)
+			if entry != nil {
+				files = append(files, *entry)
+			}
+		}
+	}
+
+	return Model{
+		files:     files,
+		cursor:    0,
+		state:     stateFileList,
+		keys:      DefaultKeyMap(),
+		showHelp:  false,
+		outputDir: outputDir,
+	}
+}
+
+func expandDir(dir string) []fileEntry {
+	var files []fileEntry
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return files
+	}
+	for _, e := range entries {
+		if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		p := filepath.Join(dir, e.Name())
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		entry := makeFileEntry(p, info)
+		if entry != nil {
+			files = append(files, *entry)
+		}
+	}
+	return files
+}
+
+func makeFileEntry(path string, info os.FileInfo) *fileEntry {
+	ext := strings.TrimPrefix(filepath.Ext(path), ".")
+	ext = strings.ToLower(ext)
+
+	if !detect.IsSupported(ext) {
+		return nil
+	}
+
+	formats := detect.GetAvailableFormats(ext)
+	if len(formats) == 0 {
+		return nil
+	}
+
+	// Use the smart default target (matches web app defaults)
+	defaultTarget := detect.GetDefaultTarget(ext)
+	defaultIdx := 0
+	for i, f := range formats {
+		if f == defaultTarget {
+			defaultIdx = i
+			break
+		}
+	}
+
+	return &fileEntry{
+		path:         path,
+		name:         info.Name(),
+		ext:          ext,
+		size:         info.Size(),
+		category:     detect.DetectCategory(ext),
+		selected:     true, // Select all by default
+		targetFormat: defaultTarget,
+		formats:      formats,
+		formatIdx:    defaultIdx,
+		status:       "idle",
+	}
+}
+
+// ─── Init ────────────────────────────────────────────────────
+
+func (m Model) Init() tea.Cmd {
+	return nil
+}
+
+// ─── Update ──────────────────────────────────────────────────
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+
+	case conversionDoneMsg:
+		if msg.index >= 0 && msg.index < len(m.files) {
+			if msg.result.Err != nil {
+				m.files[msg.index].status = "error"
+				m.files[msg.index].error = msg.result.Err.Error()
+			} else {
+				m.files[msg.index].status = "done"
+				m.files[msg.index].outputPath = msg.result.OutputPath
+			}
+			m.converted++
+		}
+
+		// Check if all done
+		if m.converted >= m.totalToConv {
+			m.state = stateResults
+			return m, nil
+		}
+
+		// Start next conversion
+		return m, m.convertNext()
+
+	case tea.KeyMsg:
+		return m.handleKey(msg)
+	}
+
+	return m, nil
+}
+
+func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch m.state {
+	case stateFileList:
+		return m.handleFileListKey(msg)
+	case stateConverting:
+		// Only allow quit during conversion
+		if key.Matches(msg, m.keys.Quit) {
+			return m, tea.Quit
+		}
+		return m, nil
+	case stateResults:
+		return m.handleResultsKey(msg)
+	}
+	return m, nil
+}
+
+func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, m.keys.Quit):
+		return m, tea.Quit
+
+	case key.Matches(msg, m.keys.Up):
+		if m.cursor > 0 {
+			m.cursor--
+			m.ensureVisible()
+		}
+
+	case key.Matches(msg, m.keys.Down):
+		if m.cursor < len(m.files)-1 {
+			m.cursor++
+			m.ensureVisible()
+		}
+
+	case key.Matches(msg, m.keys.Space):
+		if len(m.files) > 0 {
+			m.files[m.cursor].selected = !m.files[m.cursor].selected
+		}
+
+	case key.Matches(msg, m.keys.Left):
+		if len(m.files) > 0 {
+			f := &m.files[m.cursor]
+			if f.formatIdx > 0 {
+				f.formatIdx--
+				f.targetFormat = f.formats[f.formatIdx]
+			}
+		}
+
+	case key.Matches(msg, m.keys.Right), key.Matches(msg, m.keys.Tab):
+		if len(m.files) > 0 {
+			f := &m.files[m.cursor]
+			if f.formatIdx < len(f.formats)-1 {
+				f.formatIdx++
+				f.targetFormat = f.formats[f.formatIdx]
+			}
+		}
+
+	case key.Matches(msg, m.keys.SelectAll):
+		allSelected := true
+		for _, f := range m.files {
+			if !f.selected {
+				allSelected = false
+				break
+			}
+		}
+		for i := range m.files {
+			m.files[i].selected = !allSelected
+		}
+
+	case key.Matches(msg, m.keys.Delete):
+		if len(m.files) > 0 {
+			m.files = append(m.files[:m.cursor], m.files[m.cursor+1:]...)
+			if m.cursor >= len(m.files) && m.cursor > 0 {
+				m.cursor--
+			}
+		}
+
+	case key.Matches(msg, m.keys.Convert), key.Matches(msg, m.keys.Enter):
+		return m.startConversion()
+
+	case key.Matches(msg, m.keys.Help):
+		m.showHelp = !m.showHelp
+	}
+
+	return m, nil
+}
+
+func (m Model) handleResultsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, m.keys.Quit), key.Matches(msg, m.keys.Enter):
+		return m, tea.Quit
+	case key.Matches(msg, m.keys.Back):
+		// Go back to file list to convert more
+		m.state = stateFileList
+		for i := range m.files {
+			if m.files[i].status == "done" || m.files[i].status == "error" {
+				m.files[i].status = "idle"
+				m.files[i].error = ""
+				m.files[i].outputPath = ""
+			}
+		}
+		m.converting = 0
+		m.converted = 0
+		m.totalToConv = 0
+	case key.Matches(msg, m.keys.Up):
+		if m.cursor > 0 {
+			m.cursor--
+		}
+	case key.Matches(msg, m.keys.Down):
+		if m.cursor < len(m.files)-1 {
+			m.cursor++
+		}
+	}
+	return m, nil
+}
+
+// ─── Conversion logic ────────────────────────────────────────
+
+func (m Model) startConversion() (Model, tea.Cmd) {
+	// Count selected files
+	count := 0
+	for _, f := range m.files {
+		if f.selected {
+			count++
+		}
+	}
+	if count == 0 {
+		return m, nil
+	}
+
+	m.state = stateConverting
+	m.totalToConv = count
+	m.converted = 0
+	m.converting = 0
+	m.startTime = time.Now()
+
+	return m, m.convertNext()
+}
+
+func (m Model) convertNext() tea.Cmd {
+	// Find next file to convert
+	for i := range m.files {
+		if m.files[i].selected && m.files[i].status == "idle" {
+			m.files[i].status = "converting"
+			idx := i
+			path := m.files[i].path
+			target := m.files[i].targetFormat
+			outDir := m.outputDir
+
+			return func() tea.Msg {
+				result := converter.Convert(path, target, outDir)
+				return conversionDoneMsg{index: idx, result: result}
+			}
+		}
+	}
+	return nil
+}
+
+func (m *Model) ensureVisible() {
+	maxVisible := m.maxVisibleFiles()
+	if m.cursor < m.scroll {
+		m.scroll = m.cursor
+	}
+	if m.cursor >= m.scroll+maxVisible {
+		m.scroll = m.cursor - maxVisible + 1
+	}
+}
+
+func (m Model) maxVisibleFiles() int {
+	available := m.height - 12 // Reserve space for header, footer, borders
+	if available < 3 {
+		return 3
+	}
+	return available
+}
+
+// ─── Helpers ─────────────────────────────────────────────────
+
+func formatSize(bytes int64) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+	)
+	switch {
+	case bytes >= GB:
+		return fmt.Sprintf("%.1f GB", float64(bytes)/float64(GB))
+	case bytes >= MB:
+		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(MB))
+	case bytes >= KB:
+		return fmt.Sprintf("%.1f KB", float64(bytes)/float64(KB))
+	default:
+		return fmt.Sprintf("%d B", bytes)
+	}
+}
