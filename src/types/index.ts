@@ -26,12 +26,12 @@ export interface ConversionResult {
 }
 
 export const CATEGORY_COLORS: Record<FileCategory, string> = {
-  image: '#10b981',
-  document: '#0ea5e9',
-  audio: '#8b5cf6',
-  video: '#f43f5e',
-  data: '#f59e0b',
-  unknown: '#6b7280',
+  image: '#f472b6',    // soft pink
+  document: '#60a5fa',  // soft blue
+  audio: '#a78bfa',    // soft purple
+  video: '#fb923c',    // soft orange
+  data: '#34d399',     // soft mint
+  unknown: '#94a3b8',  // soft slate
 };
 
 export const CATEGORY_ICONS: Record<FileCategory, string> = {
