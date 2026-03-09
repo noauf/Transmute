@@ -62,17 +62,14 @@ func (m Model) View() string {
 		bottom = append(bottom, m.bg(m.renderDivider()))
 		bottom = append(bottom, m.bg(m.renderBottomBar()))
 
-	case stateConverting:
-		for _, line := range strings.Split(m.renderConverting(), "\n") {
-			top = append(top, m.bg(line))
-		}
-
 	case stateResults:
-		for _, line := range strings.Split(m.renderResults(), "\n") {
-			top = append(top, m.bg(line))
-		}
+		top = append(top, m.bg(""))
+		top = append(top, m.bg(m.renderColumnHeader()))
+		top = append(top, m.bg(""))
+		top = append(top, m.renderFileRows()...)
+
 		bottom = append(bottom, m.bg(m.renderDivider()))
-		bottom = append(bottom, m.bg(m.renderResultsFooter()))
+		bottom = append(bottom, m.bg(m.renderResultsBar()))
 	}
 
 	if m.showHelp {
@@ -109,13 +106,24 @@ func (m Model) View() string {
 
 func (m Model) renderTitleBar() string {
 	title := theme.Bg(theme.Logo).Render("transmute")
+
 	selected := 0
 	for _, f := range m.files {
 		if f.selected {
 			selected++
 		}
 	}
-	info := theme.Bg(theme.Breadcrumb).Render(fmt.Sprintf("  %d files · %d selected", len(m.files), selected))
+
+	var infoText string
+	isConverting := m.totalToConv > 0 && m.converted < m.totalToConv
+	if isConverting {
+		infoText = fmt.Sprintf("  %d files · converting %d/%d", len(m.files), m.converted, m.totalToConv)
+	} else if m.state == stateResults {
+		infoText = fmt.Sprintf("  %d files · %d converted", len(m.files), m.converted)
+	} else {
+		infoText = fmt.Sprintf("  %d files · %d selected", len(m.files), selected)
+	}
+	info := theme.Bg(theme.Breadcrumb).Render(infoText)
 
 	left := theme.BgStr("  ") + title + info
 	right := theme.Bg(theme.Help).Render("? help") + theme.BgStr("  ")
@@ -231,8 +239,10 @@ func (m Model) renderFileRow(idx int) string {
 	// Size
 	sizeCell := bgS(theme.FileSize).Copy().Width(colSize).Align(lipgloss.Right).Render(formatSize(f.size))
 
-	// Format selector
-	fmtStr := renderFormatSelector(f, isCursor, bgStr, bgS)
+	// Format selector — hide arrows during conversion/results (keys are blocked)
+	isConverting := m.totalToConv > 0 && m.converted < m.totalToConv
+	showArrows := isCursor && !isConverting && m.state == stateFileList
+	fmtStr := renderFormatSelector(f, showArrows, bgStr, bgS)
 	fmtCell := bgS(lipgloss.NewStyle()).Copy().Width(colFormat).Align(lipgloss.Center).Render(fmtStr)
 
 	// Status
@@ -281,6 +291,25 @@ func renderFormatSelector(f fileEntry, active bool, bgStr func(string) string, b
 // ─── Bottom bar ──────────────────────────────────────────────
 
 func (m Model) renderBottomBar() string {
+	isConverting := m.totalToConv > 0 && m.converted < m.totalToConv
+
+	if isConverting {
+		// Show progress inline
+		elapsed := time.Since(m.startTime).Round(time.Millisecond)
+		left := theme.BgStr("  ") +
+			theme.Bg(theme.StatusConverting).Render(
+				fmt.Sprintf(" Converting %d/%d ", m.converted, m.totalToConv)) +
+			theme.Bg(theme.Help).Render(fmt.Sprintf("  %s", elapsed))
+
+		right := theme.Bg(theme.Help).Render("q quit") + theme.BgStr("  ")
+
+		gap := m.width - lipgloss.Width(left) - lipgloss.Width(right)
+		if gap < 1 {
+			gap = 1
+		}
+		return left + theme.BgStr(strings.Repeat(" ", gap)) + right
+	}
+
 	selected := 0
 	for _, f := range m.files {
 		if f.selected {
@@ -315,47 +344,8 @@ func (m Model) renderBottomBar() string {
 	return left + theme.BgStr(strings.Repeat(" ", gap)) + right
 }
 
-// ─── Converting view ─────────────────────────────────────────
-
-func (m Model) renderConverting() string {
-	elapsed := time.Since(m.startTime).Round(time.Millisecond)
-
-	header := theme.Bg(theme.StatusConverting).Render(fmt.Sprintf(
-		"  Converting... %d/%d  (%s)", m.converted, m.totalToConv, elapsed))
-
-	barWidth := m.width - 8
-	if barWidth < 20 {
-		barWidth = 20
-	}
-	progress := float64(m.converted) / float64(m.totalToConv)
-	filled := int(progress * float64(barWidth))
-	if filled > barWidth {
-		filled = barWidth
-	}
-
-	bar := theme.BgStr("  ") +
-		theme.Bg(theme.ProgressFilled).Render(strings.Repeat("█", filled)) +
-		theme.Bg(theme.ProgressEmpty).Render(strings.Repeat("░", barWidth-filled))
-
-	var current []string
-	for _, f := range m.files {
-		if f.status == "converting" {
-			current = append(current, fmt.Sprintf("  %s → %s", f.name, f.targetFormat))
-		}
-	}
-	currentStr := theme.Bg(theme.Help).Render(strings.Join(current, "\n"))
-
-	return lipgloss.JoinVertical(lipgloss.Left,
-		"", header, bar, "", currentStr, "",
-		theme.Bg(theme.Help).Render("  Press q to cancel"),
-	)
-}
-
-// ─── Results view ────────────────────────────────────────────
-
-func (m Model) renderResults() string {
-	var rows []string
-
+// renderResultsBar shows a summary after all conversions are done.
+func (m Model) renderResultsBar() string {
 	successCount := 0
 	errorCount := 0
 	for _, f := range m.files {
@@ -370,46 +360,20 @@ func (m Model) renderResults() string {
 	}
 
 	elapsed := time.Since(m.startTime).Round(time.Millisecond)
-	summary := theme.Bg(theme.StatusDone).Render(fmt.Sprintf(
-		"  Conversion complete! %d succeeded", successCount))
+	left := theme.BgStr("  ") +
+		theme.Bg(theme.StatusDone).Render(fmt.Sprintf(" %d converted ", successCount))
 	if errorCount > 0 {
-		summary += theme.Bg(theme.StatusError).Render(fmt.Sprintf(", %d failed", errorCount))
+		left += theme.BgStr(" ") + theme.Bg(theme.StatusError).Render(fmt.Sprintf(" %d failed ", errorCount))
 	}
-	summary += theme.Bg(theme.Help).Render(fmt.Sprintf("  (%s)", elapsed))
+	left += theme.Bg(theme.Help).Render(fmt.Sprintf("  %s", elapsed))
 
-	rows = append(rows, "", summary, "")
+	right := theme.Bg(theme.Help).Render("enter quit  esc convert more") + theme.BgStr("  ")
 
-	for _, f := range m.files {
-		if !f.selected {
-			continue
-		}
-		icon := detect.CategoryIcon(f.category)
-		catColor := theme.CategoryColor(string(f.category))
-		extBadge := theme.Bg(theme.ExtBadge(catColor)).Render(strings.ToUpper(f.ext))
-
-		switch f.status {
-		case "done":
-			rows = append(rows,
-				theme.BgStr("  ")+theme.Bg(theme.StatusDone).Render("✓")+" "+
-					theme.BgStr(icon+" ")+extBadge+theme.BgStr(" ")+
-					theme.Bg(theme.FileName).Render(f.name)+
-					theme.Bg(theme.Help).Render(" → ")+
-					theme.Bg(theme.BreadcrumbActive).Render(f.outputPath))
-		case "error":
-			rows = append(rows,
-				theme.BgStr("  ")+theme.Bg(theme.StatusError).Render("✗")+" "+
-					theme.BgStr(icon+" ")+extBadge+theme.BgStr(" ")+
-					theme.Bg(theme.FileName).Render(f.name)+
-					theme.Bg(theme.Help).Render(" — ")+
-					theme.Bg(theme.StatusError).Render(f.error))
-		}
+	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right)
+	if gap < 1 {
+		gap = 1
 	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, rows...)
-}
-
-func (m Model) renderResultsFooter() string {
-	return theme.Bg(theme.Help).Render("  Press enter to exit  |  esc to convert more")
+	return left + theme.BgStr(strings.Repeat(" ", gap)) + right
 }
 
 // ─── Help overlay ────────────────────────────────────────────

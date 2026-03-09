@@ -14,7 +14,7 @@ import (
 
 const (
 	// CurrentVersion is the embedded build version. Updated at release time.
-	CurrentVersion = "0.1.3"
+	CurrentVersion = "0.1.4"
 
 	repoOwner = "noauf"
 	repoName  = "Transmute"

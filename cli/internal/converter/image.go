@@ -7,6 +7,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"os/exec"
 	"strings"
 
 	"golang.org/x/image/bmp"
@@ -88,6 +89,17 @@ func tryDecodeImage(f *os.File, path string) (image.Image, error) {
 }
 
 func convertImageViaFFmpeg(inputPath, outputPath, format string) error {
+	// For WebP: prefer cwebp (from libwebp-tools) which is widely available
+	if format == "webp" {
+		if cwebpPath, err := exec.LookPath("cwebp"); err == nil {
+			cmd := exec.Command(cwebpPath, "-q", "90", inputPath, "-o", outputPath)
+			if out, err := cmd.CombinedOutput(); err != nil {
+				return fmt.Errorf("cwebp error: %w\n%s", err, string(out))
+			}
+			return nil
+		}
+	}
+
 	args := []string{"-y", "-i", inputPath}
 
 	switch format {

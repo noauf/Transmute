@@ -19,9 +19,8 @@ import (
 type state int
 
 const (
-	stateFileList   state = iota // Browsing/selecting files
-	stateConverting              // Conversion in progress
-	stateResults                 // Showing results
+	stateFileList state = iota // Browsing/selecting files (also used during conversion)
+	stateResults               // All conversions finished — still shows file list
 )
 
 // ─── File entry ──────────────────────────────────────────────
@@ -199,7 +198,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Start next conversion
-		return m, m.convertNext()
+		m, cmd := m.convertNext()
+		return m, cmd
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)
@@ -212,12 +212,6 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch m.state {
 	case stateFileList:
 		return m.handleFileListKey(msg)
-	case stateConverting:
-		// Only allow quit during conversion
-		if key.Matches(msg, m.keys.Quit) {
-			return m, tea.Quit
-		}
-		return m, nil
 	case stateResults:
 		return m.handleResultsKey(msg)
 	}
@@ -225,6 +219,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	isConverting := m.totalToConv > 0 && m.converted < m.totalToConv
+
 	switch {
 	case key.Matches(msg, m.keys.Quit):
 		return m, tea.Quit
@@ -241,13 +237,17 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.ensureVisible()
 		}
 
+	case key.Matches(msg, m.keys.Help):
+		m.showHelp = !m.showHelp
+
+	// Everything below is blocked while converting
 	case key.Matches(msg, m.keys.Space):
-		if len(m.files) > 0 {
+		if !isConverting && len(m.files) > 0 {
 			m.files[m.cursor].selected = !m.files[m.cursor].selected
 		}
 
 	case key.Matches(msg, m.keys.Left):
-		if len(m.files) > 0 {
+		if !isConverting && len(m.files) > 0 {
 			f := &m.files[m.cursor]
 			if f.formatIdx > 0 {
 				f.formatIdx--
@@ -256,7 +256,7 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case key.Matches(msg, m.keys.Right), key.Matches(msg, m.keys.Tab):
-		if len(m.files) > 0 {
+		if !isConverting && len(m.files) > 0 {
 			f := &m.files[m.cursor]
 			if f.formatIdx < len(f.formats)-1 {
 				f.formatIdx++
@@ -265,19 +265,21 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case key.Matches(msg, m.keys.SelectAll):
-		allSelected := true
-		for _, f := range m.files {
-			if !f.selected {
-				allSelected = false
-				break
+		if !isConverting {
+			allSelected := true
+			for _, f := range m.files {
+				if !f.selected {
+					allSelected = false
+					break
+				}
 			}
-		}
-		for i := range m.files {
-			m.files[i].selected = !allSelected
+			for i := range m.files {
+				m.files[i].selected = !allSelected
+			}
 		}
 
 	case key.Matches(msg, m.keys.Delete):
-		if len(m.files) > 0 {
+		if !isConverting && len(m.files) > 0 {
 			m.files = append(m.files[:m.cursor], m.files[m.cursor+1:]...)
 			if m.cursor >= len(m.files) && m.cursor > 0 {
 				m.cursor--
@@ -285,10 +287,9 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	case key.Matches(msg, m.keys.Convert), key.Matches(msg, m.keys.Enter):
-		return m.startConversion()
-
-	case key.Matches(msg, m.keys.Help):
-		m.showHelp = !m.showHelp
+		if !isConverting {
+			return m.startConversion()
+		}
 	}
 
 	return m, nil
@@ -337,16 +338,17 @@ func (m Model) startConversion() (Model, tea.Cmd) {
 		return m, nil
 	}
 
-	m.state = stateConverting
+	// Stay on stateFileList — status column updates inline
 	m.totalToConv = count
 	m.converted = 0
 	m.converting = 0
 	m.startTime = time.Now()
 
-	return m, m.convertNext()
+	m, cmd := m.convertNext()
+	return m, cmd
 }
 
-func (m Model) convertNext() tea.Cmd {
+func (m Model) convertNext() (Model, tea.Cmd) {
 	// Find next file to convert
 	for i := range m.files {
 		if m.files[i].selected && m.files[i].status == "idle" {
@@ -356,13 +358,13 @@ func (m Model) convertNext() tea.Cmd {
 			target := m.files[i].targetFormat
 			outDir := m.outputDir
 
-			return func() tea.Msg {
+			return m, func() tea.Msg {
 				result := converter.Convert(path, target, outDir)
 				return conversionDoneMsg{index: idx, result: result}
 			}
 		}
 	}
-	return nil
+	return m, nil
 }
 
 func (m *Model) ensureVisible() {
