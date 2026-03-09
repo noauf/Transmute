@@ -77,7 +77,7 @@ export default function ConvertPage() {
       {/* File Grid */}
       {hasFiles && (
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4 px-4 sm:px-6 pb-44 sm:pb-36 relative z-10"
+          className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6 px-4 sm:px-6 pt-2 pb-44 sm:pb-36 relative z-10"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
