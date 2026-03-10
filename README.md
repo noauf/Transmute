@@ -2,15 +2,13 @@
 
 Universal file converter that runs entirely on your machine. No uploads, no servers, 100% private.
 
-![Transmute — Universal File Converter](https://github.com/noauf/Transmute/assets/placeholder-banner.png)
-
 Transmute converts files between 70+ formats — images, documents, audio, video, data, fonts, and spreadsheets. Use it as a **web app** in your browser or as a **CLI tool** in your terminal.
 
 ## Features
 
 - **70+ formats supported** — Images, documents, audio, video, data, fonts, spreadsheets
 - **100% client-side** — Files never leave your machine
-- **Web app** — Beautiful browser-based interface at [transmute.ing](https://transmute.ing)
+- **Web app** — Beautiful browser-based interface at [Transmute Web](https://transmute-everything.netlify.app)
 - **CLI tool** — Full-featured terminal interface for power users
 - **Batch conversion** — Convert multiple files at once
 - **Smart defaults** — Automatically suggests the best output format
@@ -20,7 +18,7 @@ Transmute converts files between 70+ formats — images, documents, audio, video
 
 ### Web App (Browser)
 
-Visit **[transmute.ing](https://transmute.ing)** — just open in your browser and start converting. No installation needed.
+Visit **[Transmute Web](https://transmute-everything.netlify.app)** — just open in your browser and start converting. No installation needed.
 
 ### CLI (Terminal)
 
@@ -28,18 +26,8 @@ Visit **[transmute.ing](https://transmute.ing)** — just open in your browser a
 # Install
 curl -fsSL https://raw.githubusercontent.com/noauf/Transmute/main/install.sh | bash
 
-# Convert a single file
-transmute photo.png
-
-# Convert to a specific format
-transmute photo.png -t webp
-
-# Batch convert with glob
-transmute *.png
-transmute ./photos/
-
-# Custom output directory
-transmute *.pdf -d ./converted/
+# Start transmute
+transmute 
 ```
 
 ## Format Support
@@ -76,7 +64,7 @@ Or manually:
 
 ### Web App
 
-No installation needed — just visit [transmute.ing](https://transmute.ing).
+No installation needed — just visit [Transmute Web](https://transmute-everything.netlify.app).
 
 To run locally:
 
@@ -149,7 +137,7 @@ go build -o transmute .
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+APACHE 2.0 — see [LICENSE](LICENSE) for details.
 
 ## Contributing
 
@@ -162,7 +150,7 @@ Contributions are welcome! Here's how to help:
 
 ## Links
 
-- **Web App:** [transmute.ing](https://transmute.ing)
+- **Web App:** [Transmute Web](https://transmute-everything.netlify.app)
 - **CLI Docs:** See `--help` after installation
 - **Issues:** [github.com/noauf/Transmute/issues](https://github.com/noauf/Transmute/issues)
 - **Releases:** [github.com/noauf/Transmute/releases](https://github.com/noauf/Transmute/releases)
