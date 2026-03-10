@@ -1,36 +1,172 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Transmute
 
-## Getting Started
+Universal file converter that runs entirely on your machine. No uploads, no servers, 100% private.
 
-First, run the development server:
+![Transmute — Universal File Converter](https://github.com/noauf/Transmute/assets/placeholder-banner.png)
+
+Transmute converts files between 70+ formats — images, documents, audio, video, data, fonts, and spreadsheets. Use it as a **web app** in your browser or as a **CLI tool** in your terminal.
+
+## Features
+
+- **70+ formats supported** — Images, documents, audio, video, data, fonts, spreadsheets
+- **100% client-side** — Files never leave your machine
+- **Web app** — Beautiful browser-based interface at [transmute.ing](https://transmute.ing)
+- **CLI tool** — Full-featured terminal interface for power users
+- **Batch conversion** — Convert multiple files at once
+- **Smart defaults** — Automatically suggests the best output format
+- **Open source** — Inspect the code, contribute, or fork
+
+## Quick Start
+
+### Web App (Browser)
+
+Visit **[transmute.ing](https://transmute.ing)** — just open in your browser and start converting. No installation needed.
+
+### CLI (Terminal)
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Install
+curl -fsSL https://raw.githubusercontent.com/noauf/Transmute/main/install.sh | bash
+
+# Convert a single file
+transmute photo.png
+
+# Convert to a specific format
+transmute photo.png -t webp
+
+# Batch convert with glob
+transmute *.png
+transmute ./photos/
+
+# Custom output directory
+transmute *.pdf -d ./converted/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Format Support
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Category | Formats |
+|----------|---------|
+| **Images** | PNG, JPG, JPEG, GIF, BMP, TIFF, WebP, AVIF, ICO, PSD, HEIC, HEIF, RAW (CR2, NEF, ARW, DNG) |
+| **Documents** | PDF, DOCX, DOC, TXT, HTML, MD, RTF, ODT, EPUB, MOBI, CSV, TSV |
+| **Audio** | MP3, WAV, FLAC, OGG, AAC, M4A, WMA, OPUS |
+| **Video** | MP4, WebM, AVI, MOV, MKV, GIF |
+| **Data** | JSON, XML, YAML, TOML, CSV, TSV, SQL |
+| **Fonts** | TTF, OTF, WOFF, WOFF2 |
+| **Spreadsheets** | XLSX, XLS, CSV, ODS |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Installation
 
-## Learn More
+### CLI Installation
 
-To learn more about Next.js, take a look at the following resources:
+The installer detects your OS and architecture:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+curl -fsSL https://raw.githubusercontent.com/noauf/Transmute/main/install.sh | bash
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Or manually:
 
-## Deploy on Vercel
+1. Download the latest release for your platform from [GitHub Releases](https://github.com/noauf/Transmute/releases)
+2. Extract the archive
+3. Move `transmute` to your PATH (e.g., `/usr/local/bin/`)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+**Requirements:**
+- macOS, Linux, or Windows
+- For audio/video: FFmpeg (auto-installed on first use)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Web App
+
+No installation needed — just visit [transmute.ing](https://transmute.ing).
+
+To run locally:
+
+```bash
+# Clone the repo
+git clone https://github.com/noauf/Transmute.git
+cd Transmute
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to use the app.
+
+## CLI Keybindings
+
+When running the TUI:
+
+| Key | Action |
+|-----|--------|
+| `↑/↓` or `j/k` | Navigate files |
+| `←/→` or `h/l` | Change target format |
+| `space` | Toggle file selection |
+| `a` | Select/deselect all |
+| `p` | Preview file |
+| `d` | Remove file from list |
+| `x` | Delete converted output |
+| `c` or `enter` | Start conversion |
+| `?` | Show help |
+| `q` | Quit |
+
+## Development
+
+### Project Structure
+
+```
+Transmute/
+├── src/                    # Next.js web app
+│   ├── app/               # App router pages
+│   ├── components/        # React components
+│   ├── hooks/             # Custom hooks
+│   ├── lib/               # Utilities
+│   └── types/             # TypeScript types
+├── cli/                   # Go CLI tool
+│   ├── cmd/               # CLI commands
+│   └── internal/          # Core logic
+│       ├── converter/     # File conversion
+│       ├── detect/        # Format detection
+│       ├── ffmpeg/        # FFmpeg manager
+│       ├── theme/         # TUI styling
+│       └── tui/           # Bubble Tea TUI
+└── public/                # Static assets
+```
+
+### Tech Stack
+
+- **Web App:** Next.js 14, TypeScript, Tailwind CSS, Framer Motion
+- **CLI:** Go 1.25, Bubble Tea, Lip Gloss
+- **Conversion:** FFmpeg, pdf.js, pdf-lib,libvips, and more
+
+### Building the CLI
+
+```bash
+cd cli
+go build -o transmute .
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+Contributions are welcome! Here's how to help:
+
+1. **Report bugs** — Open an issue with details
+2. **Suggest features** — We'd love to hear your ideas
+3. **Add formats** — Check the converter package for where to add new format routes
+4. **Improve the UI** — The web app needs your design skills
+
+## Links
+
+- **Web App:** [transmute.ing](https://transmute.ing)
+- **CLI Docs:** See `--help` after installation
+- **Issues:** [github.com/noauf/Transmute/issues](https://github.com/noauf/Transmute/issues)
+- **Releases:** [github.com/noauf/Transmute/releases](https://github.com/noauf/Transmute/releases)
+
+---
+
+Made with love. Runs on your machine.
