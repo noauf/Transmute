@@ -12,6 +12,7 @@ interface FileRowProps {
   onRemove: (id: string) => void;
   onDownload: (file: UploadedFile) => void;
   onPreview: (file: UploadedFile) => void;
+  onDeleteConverted: (id: string) => void;
 }
 
 export function FileRow({
@@ -21,6 +22,7 @@ export function FileRow({
   onRemove,
   onDownload,
   onPreview,
+  onDeleteConverted,
 }: FileRowProps) {
   const color = CATEGORY_COLORS[file.category];
   const icon = CATEGORY_ICONS[file.category];
@@ -103,7 +105,7 @@ export function FileRow({
 
         {/* Status / actions */}
         <div className="w-[130px] flex items-center justify-end gap-1.5 flex-shrink-0 pr-1">
-          <DesktopStatus file={file} color={color} onRemove={onRemove} onDownload={onDownload} onPreview={onPreview} />
+          <DesktopStatus file={file} color={color} onRemove={onRemove} onDownload={onDownload} onPreview={onPreview} onDeleteConverted={onDeleteConverted} />
         </div>
       </div>
 
@@ -182,12 +184,14 @@ function DesktopStatus({
   onRemove,
   onDownload,
   onPreview,
+  onDeleteConverted,
 }: {
   file: UploadedFile;
   color: string;
   onRemove: (id: string) => void;
   onDownload: (file: UploadedFile) => void;
   onPreview: (file: UploadedFile) => void;
+  onDeleteConverted: (id: string) => void;
 }) {
   return (
     <AnimatePresence mode="wait">

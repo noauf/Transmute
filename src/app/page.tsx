@@ -1001,13 +1001,13 @@ export default function LandingPage() {
           transition={{ duration: 0.6 }}
         >
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-purple/10 rounded-full font-mono text-[11px] font-semibold uppercase tracking-wider text-purple">
-            Terminal Lovers
+            Terminal Lovers (in early Alpha)
           </span>
           <h2 className="font-serif font-extrabold text-[clamp(32px,5vw,48px)] leading-[1.1] tracking-tight text-text-dark">
             Prefer the command line?
           </h2>
           <p className="text-[17px] text-text-mid leading-relaxed max-w-[520px]">
-            A full interactive TUI. Navigate files, pick formats, and batch convert without leaving your terminal.
+            A full interactive TUI. Navigate files, pick formats, and batch convert without leaving your terminal. (May not work)
           </p>
         </motion.div>
 
