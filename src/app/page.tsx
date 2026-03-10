@@ -776,7 +776,7 @@ export default function LandingPage() {
             variants={fadeUp}
           >
             Drop images, docs, audio, video, or data files &mdash; get instant conversions
-            right in your browser. No uploads. No accounts. No limits.
+            right in your browser. No uploads. No accounts. No limits. Open source
           </motion.p>
 
           {/* Format Ticker */}
