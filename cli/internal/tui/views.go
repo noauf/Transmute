@@ -256,6 +256,8 @@ func (m Model) renderFileRow(idx int) string {
 		statusStr = bgS(theme.StatusDone).Render("done")
 	case "error":
 		statusStr = bgS(theme.StatusError).Render("error")
+	case "deleted":
+		statusStr = bgS(theme.StatusError).Render("deleted")
 	}
 	statusCell := bgS(lipgloss.NewStyle()).Copy().Width(colStatus).Align(lipgloss.Center).Render(statusStr)
 
@@ -326,8 +328,8 @@ func (m Model) renderBottomBar() string {
 
 	// Adaptive keybindings: full or compact based on available space
 	leftW := lipgloss.Width(left)
-	fullHelp := "up/down navigate  left/right format  space select  a all  q quit"
-	shortHelp := "↑↓ nav  ←→ fmt  space sel  a all  q quit"
+	fullHelp := "up/down navigate  left/right format  space select  p preview  a all  q quit"
+	shortHelp := "↑↓ nav  ←→ fmt  spc sel  p preview  q quit"
 
 	helpText := fullHelp
 	rightW := len(helpText) + 4 // 2 padding each side
@@ -367,7 +369,7 @@ func (m Model) renderResultsBar() string {
 	}
 	left += theme.Bg(theme.Help).Render(fmt.Sprintf("  %s", elapsed))
 
-	right := theme.Bg(theme.Help).Render("enter quit  esc convert more") + theme.BgStr("  ")
+	right := theme.Bg(theme.Help).Render("p preview  x delete  enter quit  esc convert more") + theme.BgStr("  ")
 
 	gap := m.width - lipgloss.Width(left) - lipgloss.Width(right)
 	if gap < 1 {
@@ -387,7 +389,9 @@ func (m Model) renderHelp() string {
 		{"left/right, h/l", "Change target format"},
 		{"space", "Toggle file selection"},
 		{"a", "Select / deselect all"},
+		{"p", "Preview file"},
 		{"d", "Remove file from list"},
+		{"x", "Delete converted output"},
 		{"c or enter", "Start conversion"},
 		{"esc", "Go back"},
 		{"q or ctrl+c", "Quit"},

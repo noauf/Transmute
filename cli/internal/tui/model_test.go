@@ -94,6 +94,53 @@ func TestInlineConversionStateMachine(t *testing.T) {
 	t.Log("State machine verified: idle -> converting -> done -> idle (via esc)")
 }
 
+func TestDeleteOutput(t *testing.T) {
+	testFile := filepath.Join("..", "..", "..", "public", "logo.png")
+	if _, err := os.Stat(testFile); err != nil {
+		t.Skipf("test file not found: %s", testFile)
+	}
+
+	outDir := t.TempDir()
+	m := New([]string{testFile}, outDir)
+	m.width = 80
+	m.height = 24
+
+	// Convert the file
+	newModel, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+	m = newModel.(Model)
+	msg := cmd()
+	newModel, _ = m.Update(msg)
+	m = newModel.(Model)
+
+	if m.state != stateResults {
+		t.Fatalf("expected stateResults, got %d", m.state)
+	}
+	if m.files[0].status != "done" {
+		t.Fatalf("expected done, got %s", m.files[0].status)
+	}
+
+	outputPath := m.files[0].outputPath
+	if _, err := os.Stat(outputPath); err != nil {
+		t.Fatalf("output file should exist: %v", err)
+	}
+
+	// Press 'x' to delete the output
+	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	m = newModel.(Model)
+
+	if m.files[0].status != "deleted" {
+		t.Fatalf("expected 'deleted' status after pressing x, got '%s'", m.files[0].status)
+	}
+	if m.files[0].outputPath != "" {
+		t.Fatal("outputPath should be cleared after delete")
+	}
+	if _, err := os.Stat(outputPath); err == nil {
+		t.Fatal("output file should have been deleted from disk")
+	}
+
+	t.Log("Delete output works: file removed from disk, status set to 'deleted'")
+}
+
 func TestViewRendersDuringConversion(t *testing.T) {
 	testFile := filepath.Join("..", "..", "..", "public", "logo.png")
 	if _, err := os.Stat(testFile); err != nil {

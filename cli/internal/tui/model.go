@@ -3,7 +3,9 @@ package tui
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -35,7 +37,7 @@ type fileEntry struct {
 	targetFormat string
 	formats      []string
 	formatIdx    int
-	status       string // "idle", "converting", "done", "error"
+	status       string // "idle", "converting", "done", "error", "deleted"
 	error        string
 	outputPath   string
 }
@@ -290,6 +292,11 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if !isConverting {
 			return m.startConversion()
 		}
+
+	case key.Matches(msg, m.keys.Preview):
+		if len(m.files) > 0 {
+			openFile(m.files[m.cursor].path)
+		}
 	}
 
 	return m, nil
@@ -303,7 +310,7 @@ func (m Model) handleResultsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Go back to file list to convert more
 		m.state = stateFileList
 		for i := range m.files {
-			if m.files[i].status == "done" || m.files[i].status == "error" {
+			if m.files[i].status == "done" || m.files[i].status == "error" || m.files[i].status == "deleted" {
 				m.files[i].status = "idle"
 				m.files[i].error = ""
 				m.files[i].outputPath = ""
@@ -315,10 +322,33 @@ func (m Model) handleResultsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keys.Up):
 		if m.cursor > 0 {
 			m.cursor--
+			m.ensureVisible()
 		}
 	case key.Matches(msg, m.keys.Down):
 		if m.cursor < len(m.files)-1 {
 			m.cursor++
+			m.ensureVisible()
+		}
+	case key.Matches(msg, m.keys.Preview):
+		// Preview: open output file if done, otherwise open input file
+		if len(m.files) > 0 {
+			f := m.files[m.cursor]
+			if f.status == "done" && f.outputPath != "" {
+				openFile(f.outputPath)
+			} else {
+				openFile(f.path)
+			}
+		}
+	case key.Matches(msg, m.keys.DeleteOutput):
+		// Delete the converted output file from disk
+		if len(m.files) > 0 {
+			f := &m.files[m.cursor]
+			if f.status == "done" && f.outputPath != "" {
+				if err := os.Remove(f.outputPath); err == nil {
+					f.status = "deleted"
+					f.outputPath = ""
+				}
+			}
 		}
 	}
 	return m, nil
@@ -386,6 +416,22 @@ func (m Model) maxVisibleFiles() int {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────
+
+// openFile opens a file with the system default viewer.
+func openFile(path string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", path)
+	case "linux":
+		cmd = exec.Command("xdg-open", path)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", path)
+	default:
+		return
+	}
+	cmd.Start() //nolint:errcheck
+}
 
 func formatSize(bytes int64) string {
 	const (

@@ -884,126 +884,38 @@ export default function LandingPage() {
           <h2 className="font-serif font-extrabold text-[clamp(32px,5vw,48px)] leading-[1.1] tracking-tight text-text-dark">
             Three steps. That&apos;s it.
           </h2>
+          <p className="text-[17px] text-text-mid leading-relaxed max-w-[520px]">
+            Drop files, pick a format, download. See it in action.
+          </p>
         </motion.div>
 
-        {/* Timeline layout */}
-        <div className="relative max-w-[960px] w-full">
-          {/* Connecting line — desktop only */}
-          <div className="absolute top-[52px] left-[calc(8.33%+24px)] right-[calc(8.33%+24px)] h-[2px] bg-border-soft hidden md:block" />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-0">
-            {/* Step 1 — Drop */}
-            <motion.div
-              className="flex flex-col items-center text-center px-4"
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
-            >
-              {/* Visual scene */}
-              <div className="relative w-[104px] h-[104px] mb-5">
-                {/* Background shape */}
-                <div className="absolute inset-0 rounded-[28px] bg-pink/8 rotate-3" />
-                <div className="relative w-full h-full rounded-[28px] bg-white border-2 border-pink/20 shadow-[0_4px_20px_rgba(244,114,182,0.1)] flex items-center justify-center -rotate-1">
-                  {/* File stack */}
-                  <div className="relative">
-                    <div className="absolute -top-1 -left-1 w-10 h-12 rounded-lg bg-pink/10 border border-pink/15 rotate-[-6deg]" />
-                    <div className="absolute -top-0.5 left-0 w-10 h-12 rounded-lg bg-pink/8 border border-pink/12 rotate-[-3deg]" />
-                    <div className="relative w-10 h-12 rounded-lg bg-white border-[1.5px] border-pink/25 flex items-center justify-center">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-pink">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
+        <motion.div
+          className="w-full max-w-[720px]"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] as const }}
+        >
+          <div className="rounded-xl overflow-hidden shadow-[0_8px_48px_rgba(45,31,20,0.12)] border border-border-soft bg-white">
+            {/* Browser-style title bar */}
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-card-bg border-b border-border-soft">
+              <div className="flex items-center gap-[6px]">
+                <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57] border border-[#e0443e]/40" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e] border border-[#dea123]/40" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#28c840] border border-[#1aab29]/40" />
               </div>
-              {/* Number + text */}
-              <div className="w-8 h-8 rounded-full bg-pink flex items-center justify-center font-serif font-extrabold text-sm text-white mb-3 shadow-[0_2px_8px_rgba(244,114,182,0.3)]">
-                1
+              <div className="flex-1 text-center">
+                <span className="text-[12px] font-mono text-text-light">transmute.ing</span>
               </div>
-              <h3 className="font-serif font-bold text-[17px] text-text-dark mb-1.5">Drop your files</h3>
-              <p className="text-[13px] text-text-mid leading-relaxed max-w-[220px]">
-                Drag and drop anything {'\u2014'} images, docs, audio, video, data. We handle 70+ formats.
-              </p>
-            </motion.div>
-
-            {/* Step 2 — Pick */}
-            <motion.div
-              className="flex flex-col items-center text-center px-4"
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] as const }}
-            >
-              {/* Visual scene */}
-              <div className="relative w-[104px] h-[104px] mb-5">
-                <div className="absolute inset-0 rounded-[28px] bg-purple/8 -rotate-2" />
-                <div className="relative w-full h-full rounded-[28px] bg-white border-2 border-purple/20 shadow-[0_4px_20px_rgba(167,139,250,0.1)] flex items-center justify-center rotate-1">
-                  {/* Format picker mini-UI */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-[42px] h-[14px] rounded-md bg-purple/15 border border-purple/20" />
-                      <div className="w-3 h-3 rounded-full bg-purple/30 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-purple" />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-[42px] h-[14px] rounded-md bg-purple/8 border border-purple/10" />
-                      <div className="w-3 h-3 rounded-full border border-purple/20" />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-[42px] h-[14px] rounded-md bg-purple/8 border border-purple/10" />
-                      <div className="w-3 h-3 rounded-full border border-purple/20" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Number + text */}
-              <div className="w-8 h-8 rounded-full bg-purple flex items-center justify-center font-serif font-extrabold text-sm text-white mb-3 shadow-[0_2px_8px_rgba(167,139,250,0.3)]">
-                2
-              </div>
-              <h3 className="font-serif font-bold text-[17px] text-text-dark mb-1.5">Pick a format</h3>
-              <p className="text-[13px] text-text-mid leading-relaxed max-w-[220px]">
-                Smart suggestions based on your file type. Or choose any compatible output format.
-              </p>
-            </motion.div>
-
-            {/* Step 3 — Download */}
-            <motion.div
-              className="flex flex-col items-center text-center px-4"
-              initial={{ opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] as const }}
-            >
-              {/* Visual scene */}
-              <div className="relative w-[104px] h-[104px] mb-5">
-                <div className="absolute inset-0 rounded-[28px] bg-mint/8 rotate-2" />
-                <div className="relative w-full h-full rounded-[28px] bg-white border-2 border-mint/20 shadow-[0_4px_20px_rgba(52,211,153,0.1)] flex items-center justify-center -rotate-1">
-                  {/* Checkmark + download visual */}
-                  <div className="relative">
-                    <div className="w-12 h-12 rounded-2xl bg-mint/10 border-[1.5px] border-mint/25 flex items-center justify-center">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-mint">
-                        <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                    {/* Tiny sparkles */}
-                    <div className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 rounded-full bg-mint/30" />
-                    <div className="absolute -bottom-1 -left-2 w-2 h-2 rounded-full bg-mint/20" />
-                  </div>
-                </div>
-              </div>
-              {/* Number + text */}
-              <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center font-serif font-extrabold text-sm text-white mb-3 shadow-[0_2px_8px_rgba(52,211,153,0.3)]">
-                3
-              </div>
-              <h3 className="font-serif font-bold text-[17px] text-text-dark mb-1.5">Download</h3>
-              <p className="text-[13px] text-text-mid leading-relaxed max-w-[220px]">
-                Converted instantly in your browser. Hit download {'\u2014'} done. Files never leave your machine.
-              </p>
-            </motion.div>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/Tuturial.gif"
+              alt="Tutorial showing how to convert files with Transmute"
+              className="w-full block"
+            />
           </div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ──── PRIVACY ──── */}
