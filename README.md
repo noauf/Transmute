@@ -137,7 +137,7 @@ go build -o transmute .
 
 ## License
 
-APACHE 2.0 — see [LICENSE](LICENSE) for details.
+APACHE 2.0
 
 ## Contributing
 
