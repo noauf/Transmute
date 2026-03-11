@@ -22,7 +22,6 @@ type state int
 
 const (
 	stateFileList state = iota // Browsing/selecting files (also used during conversion)
-	stateResults               // All conversions finished — still shows file list
 )
 
 // ─── File entry ──────────────────────────────────────────────
@@ -158,7 +157,7 @@ func makeFileEntry(path string, info os.FileInfo) *fileEntry {
 		ext:          ext,
 		size:         info.Size(),
 		category:     detect.DetectCategory(ext),
-		selected:     true, // Select all by default
+		selected:     false, // Don't select by default
 		targetFormat: defaultTarget,
 		formats:      formats,
 		formatIdx:    defaultIdx,
@@ -193,13 +192,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.converted++
 		}
 
-		// Check if all done
-		if m.converted >= m.totalToConv {
-			m.state = stateResults
-			return m, nil
-		}
-
-		// Start next conversion
+		// Start next conversion if there are more files
 		m, cmd := m.convertNext()
 		return m, cmd
 
@@ -211,13 +204,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch m.state {
-	case stateFileList:
-		return m.handleFileListKey(msg)
-	case stateResults:
-		return m.handleResultsKey(msg)
-	}
-	return m, nil
+	return m.handleFileListKey(msg)
 }
 
 func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -295,62 +282,39 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case key.Matches(msg, m.keys.Preview):
 		if len(m.files) > 0 {
-			openFile(m.files[m.cursor].path)
-		}
-	}
-
-	return m, nil
-}
-
-func (m Model) handleResultsKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch {
-	case key.Matches(msg, m.keys.Quit), key.Matches(msg, m.keys.Enter):
-		return m, tea.Quit
-	case key.Matches(msg, m.keys.Back):
-		// Go back to file list to convert more
-		m.state = stateFileList
-		for i := range m.files {
-			if m.files[i].status == "done" || m.files[i].status == "error" || m.files[i].status == "deleted" {
-				m.files[i].status = "idle"
-				m.files[i].error = ""
-				m.files[i].outputPath = ""
-			}
-		}
-		m.converting = 0
-		m.converted = 0
-		m.totalToConv = 0
-	case key.Matches(msg, m.keys.Up):
-		if m.cursor > 0 {
-			m.cursor--
-			m.ensureVisible()
-		}
-	case key.Matches(msg, m.keys.Down):
-		if m.cursor < len(m.files)-1 {
-			m.cursor++
-			m.ensureVisible()
-		}
-	case key.Matches(msg, m.keys.Preview):
-		// Preview: open output file if done, otherwise open input file
-		if len(m.files) > 0 {
 			f := m.files[m.cursor]
+			// Open output if done, otherwise input
+			path := f.path
 			if f.status == "done" && f.outputPath != "" {
-				openFile(f.outputPath)
-			} else {
-				openFile(f.path)
+				path = f.outputPath
 			}
+			openFile(path)
 		}
+
 	case key.Matches(msg, m.keys.DeleteOutput):
 		// Delete the converted output file from disk
-		if len(m.files) > 0 {
+		if len(m.files) > 0 && !isConverting {
 			f := &m.files[m.cursor]
 			if f.status == "done" && f.outputPath != "" {
 				if err := os.Remove(f.outputPath); err == nil {
-					f.status = "deleted"
+					f.status = "idle"
 					f.outputPath = ""
 				}
 			}
 		}
+
+	case key.Matches(msg, m.keys.Back):
+		// Reset done/error files to idle for reconversion
+		if len(m.files) > 0 && !isConverting {
+			f := &m.files[m.cursor]
+			if f.status == "done" || f.status == "error" || f.status == "deleted" {
+				f.status = "idle"
+				f.error = ""
+				f.outputPath = ""
+			}
+		}
 	}
+
 	return m, nil
 }
 

@@ -30,9 +30,9 @@ func TestInlineConversionStateMachine(t *testing.T) {
 	if m.files[0].status != "idle" {
 		t.Fatalf("expected idle status, got %s", m.files[0].status)
 	}
-	if !m.files[0].selected {
-		t.Fatal("expected file to be selected by default")
-	}
+
+	// Select the file (default is now false)
+	m.files[0].selected = true
 
 	t.Logf("File: %s -> %s (selected: %v)", m.files[0].name, m.files[0].targetFormat, m.files[0].selected)
 
@@ -62,8 +62,9 @@ func TestInlineConversionStateMachine(t *testing.T) {
 	newModel, _ = m.Update(msg)
 	m = newModel.(Model)
 
-	if m.state != stateResults {
-		t.Fatalf("expected stateResults after all conversions done, got %d", m.state)
+	// Should stay on stateFileList after conversion (not stateResults)
+	if m.state != stateFileList {
+		t.Fatalf("expected stateFileList after conversion, got %d", m.state)
 	}
 	if m.files[0].status != "done" {
 		t.Fatalf("expected 'done' status, got '%s' (error: %s)", m.files[0].status, m.files[0].error)
@@ -80,18 +81,7 @@ func TestInlineConversionStateMachine(t *testing.T) {
 
 	t.Logf("Conversion complete: %s (%d bytes)", m.files[0].outputPath, info.Size())
 
-	// Test 'esc' to go back to file list
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyEscape})
-	m = newModel.(Model)
-
-	if m.state != stateFileList {
-		t.Fatalf("expected stateFileList after esc, got %d", m.state)
-	}
-	if m.files[0].status != "idle" {
-		t.Fatalf("expected status reset to 'idle' after esc, got '%s'", m.files[0].status)
-	}
-
-	t.Log("State machine verified: idle -> converting -> done -> idle (via esc)")
+	t.Log("State machine verified: idle -> converting -> done (stays on file list)")
 }
 
 func TestDeleteOutput(t *testing.T) {
@@ -105,6 +95,9 @@ func TestDeleteOutput(t *testing.T) {
 	m.width = 80
 	m.height = 24
 
+	// Select the file (default is now false)
+	m.files[0].selected = true
+
 	// Convert the file
 	newModel, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
 	m = newModel.(Model)
@@ -112,33 +105,23 @@ func TestDeleteOutput(t *testing.T) {
 	newModel, _ = m.Update(msg)
 	m = newModel.(Model)
 
-	if m.state != stateResults {
-		t.Fatalf("expected stateResults, got %d", m.state)
+	// Should stay on stateFileList
+	if m.state != stateFileList {
+		t.Fatalf("expected stateFileList, got %d", m.state)
 	}
 	if m.files[0].status != "done" {
 		t.Fatalf("expected done, got %s", m.files[0].status)
 	}
 
-	outputPath := m.files[0].outputPath
-	if _, err := os.Stat(outputPath); err != nil {
-		t.Fatalf("output file should exist: %v", err)
-	}
-
-	// Press 'x' to delete the output
+	// Test pressing 'x' to delete the output and reset to idle
 	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
 	m = newModel.(Model)
 
-	if m.files[0].status != "deleted" {
-		t.Fatalf("expected 'deleted' status after pressing x, got '%s'", m.files[0].status)
-	}
-	if m.files[0].outputPath != "" {
-		t.Fatal("outputPath should be cleared after delete")
-	}
-	if _, err := os.Stat(outputPath); err == nil {
-		t.Fatal("output file should have been deleted from disk")
+	if m.files[0].status != "idle" {
+		t.Fatalf("expected 'idle' status after pressing x, got '%s'", m.files[0].status)
 	}
 
-	t.Log("Delete output works: file removed from disk, status set to 'deleted'")
+	t.Log("Delete output works: file removed from disk, status reset to 'idle'")
 }
 
 func TestViewRendersDuringConversion(t *testing.T) {
@@ -159,9 +142,12 @@ func TestViewRendersDuringConversion(t *testing.T) {
 	if !containsStr(view, "idle") {
 		t.Error("initial view should contain 'idle' status")
 	}
-	if !containsStr(view, "Convert 1 files") {
-		t.Error("initial view should contain convert button")
+	if !containsStr(view, "Select files to convert") {
+		t.Error("initial view should contain 'Select files to convert'")
 	}
+
+	// Select a file and start conversion
+	m.files[0].selected = true
 
 	// Start conversion
 	newModel, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})

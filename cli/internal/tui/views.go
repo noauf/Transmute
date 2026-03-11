@@ -61,15 +61,6 @@ func (m Model) View() string {
 
 		bottom = append(bottom, m.bg(m.renderDivider()))
 		bottom = append(bottom, m.bg(m.renderBottomBar()))
-
-	case stateResults:
-		top = append(top, m.bg(""))
-		top = append(top, m.bg(m.renderColumnHeader()))
-		top = append(top, m.bg(""))
-		top = append(top, m.renderFileRows()...)
-
-		bottom = append(bottom, m.bg(m.renderDivider()))
-		bottom = append(bottom, m.bg(m.renderResultsBar()))
 	}
 
 	if m.showHelp {
@@ -118,8 +109,6 @@ func (m Model) renderTitleBar() string {
 	isConverting := m.totalToConv > 0 && m.converted < m.totalToConv
 	if isConverting {
 		infoText = fmt.Sprintf("  %d files · converting %d/%d", len(m.files), m.converted, m.totalToConv)
-	} else if m.state == stateResults {
-		infoText = fmt.Sprintf("  %d files · %d converted", len(m.files), m.converted)
 	} else {
 		infoText = fmt.Sprintf("  %d files · %d selected", len(m.files), selected)
 	}
@@ -385,29 +374,34 @@ func (m Model) renderHelp() string {
 		key  string
 		desc string
 	}{
-		{"up/down, j/k", "Navigate files"},
-		{"left/right, h/l", "Change target format"},
-		{"space", "Toggle file selection"},
+		{"↑/↓ or j/k", "Navigate files"},
+		{"←/→ or h/l", "Change target format"},
+		{"space", "Toggle selection"},
 		{"a", "Select / deselect all"},
-		{"p", "Preview file"},
-		{"d", "Remove file from list"},
-		{"x", "Delete converted output"},
-		{"c or enter", "Start conversion"},
-		{"esc", "Go back"},
-		{"q or ctrl+c", "Quit"},
+		{"p", "Preview / open file"},
+		{"d", "Remove from list"},
+		{"x", "Delete output"},
+		{"c or enter", "Convert selected"},
+		{"? or q", "Close / quit"},
 	}
 
+	// Title bar
 	var lines []string
-	lines = append(lines, "")
-	lines = append(lines, theme.Bg(theme.BreadcrumbActive).Render("  Keyboard Shortcuts"))
-	lines = append(lines, "")
+	title := theme.Bg(theme.Logo).Render(" Keyboard Shortcuts ")
+	divider := theme.Bg(theme.Divider).Render(strings.Repeat("─", m.width-4))
+
+	lines = append(lines, m.bg(""))
+	lines = append(lines, m.bg(theme.BgStr("  ")+title+theme.BgStr(strings.Repeat(" ", m.width-4-lipgloss.Width(title)-2))))
+	lines = append(lines, m.bg(divider))
 
 	for _, k := range keys {
-		lines = append(lines, fmt.Sprintf("  %s  %s",
-			theme.Bg(theme.Selected).Copy().Width(18).Render(k.key),
-			theme.Bg(theme.Help).Render(k.desc)))
+		keyStr := theme.Bg(theme.Selected).Copy().Width(16).Render(k.key)
+		descStr := theme.Bg(theme.Help).Render(" " + k.desc + " ")
+		line := m.bg(keyStr + descStr)
+		lines = append(lines, line)
 	}
-	lines = append(lines, "")
+
+	lines = append(lines, m.bg(divider))
 
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
