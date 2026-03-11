@@ -54,6 +54,8 @@ type conversionStartMsg struct {
 
 type tickMsg time.Time
 
+type refreshFilesMsg struct{}
+
 // ─── Model ───────────────────────────────────────────────────
 
 type Model struct {
@@ -72,6 +74,10 @@ type Model struct {
 	converted   int
 	totalToConv int
 	startTime   time.Time
+
+	// File watching
+	watchDirs   map[string]int64 // dir path -> last known mod time
+	lastRefresh time.Time
 }
 
 // New creates a new TUI model from a list of file paths and an output directory.
@@ -168,7 +174,10 @@ func makeFileEntry(path string, info os.FileInfo) *fileEntry {
 // ─── Init ────────────────────────────────────────────────────
 
 func (m Model) Init() tea.Cmd {
-	return nil
+	// Start a ticker to watch for file changes every 2 seconds
+	return tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+		return refreshFilesMsg{}
+	})
 }
 
 // ─── Update ──────────────────────────────────────────────────
@@ -198,6 +207,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.handleKey(msg)
+
+	case refreshFilesMsg:
+		// Check directories for new files
+		m = m.checkForNewFiles()
+		// Continue watching
+		return m, tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+			return refreshFilesMsg{}
+		})
 	}
 
 	return m, nil
@@ -291,20 +308,8 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			openFile(path)
 		}
 
-	case key.Matches(msg, m.keys.DeleteOutput):
-		// Delete the converted output file from disk
-		if len(m.files) > 0 && !isConverting {
-			f := &m.files[m.cursor]
-			if f.status == "done" && f.outputPath != "" {
-				if err := os.Remove(f.outputPath); err == nil {
-					f.status = "idle"
-					f.outputPath = ""
-				}
-			}
-		}
-
-	case key.Matches(msg, m.keys.Back):
-		// Reset done/error files to idle for reconversion
+	case key.Matches(msg, m.keys.Reset):
+		// Reset done/error/deleted file back to idle for reconversion
 		if len(m.files) > 0 && !isConverting {
 			f := &m.files[m.cursor]
 			if f.status == "done" || f.status == "error" || f.status == "deleted" {
@@ -313,6 +318,10 @@ func (m Model) handleFileListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				f.outputPath = ""
 			}
 		}
+
+	case key.Matches(msg, m.keys.Refresh):
+		// Manually refresh the file list
+		m = m.checkForNewFiles()
 	}
 
 	return m, nil
@@ -413,4 +422,47 @@ func formatSize(bytes int64) string {
 	default:
 		return fmt.Sprintf("%d B", bytes)
 	}
+}
+
+// checkForNewFiles scans directories for new files and adds them to the list.
+func (m Model) checkForNewFiles() Model {
+	dirs := make(map[string]bool)
+	for _, f := range m.files {
+		dir := filepath.Dir(f.path)
+		dirs[dir] = true
+	}
+
+	for dir := range dirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if e.IsDir() || strings.HasPrefix(e.Name(), ".") {
+				continue
+			}
+			path := filepath.Join(dir, e.Name())
+
+			// Check if already in list
+			exists := false
+			for _, f := range m.files {
+				if f.path == path {
+					exists = true
+					break
+				}
+			}
+			if !exists {
+				info, err := e.Info()
+				if err != nil {
+					continue
+				}
+				entry := makeFileEntry(path, info)
+				if entry != nil {
+					m.files = append(m.files, *entry)
+				}
+			}
+		}
+	}
+
+	return m
 }

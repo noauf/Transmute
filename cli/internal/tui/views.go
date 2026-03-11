@@ -317,8 +317,8 @@ func (m Model) renderBottomBar() string {
 
 	// Adaptive keybindings: full or compact based on available space
 	leftW := lipgloss.Width(left)
-	fullHelp := "up/down navigate  left/right format  space select  p preview  a all  q quit"
-	shortHelp := "↑↓ nav  ←→ fmt  spc sel  p preview  q quit"
+	fullHelp := "↑↓ nav  ←→ fmt  space sel  p preview  r reset  d delete  f refresh  c convert  q quit"
+	shortHelp := "↑↓ nav  ←→ fmt  spc sel  p prev  r rst  d del  q quit"
 
 	helpText := fullHelp
 	rightW := len(helpText) + 4 // 2 padding each side
@@ -379,8 +379,9 @@ func (m Model) renderHelp() string {
 		{"space", "Toggle selection"},
 		{"a", "Select / deselect all"},
 		{"p", "Preview / open file"},
+		{"r", "Reset to idle"},
 		{"d", "Remove from list"},
-		{"x", "Delete output"},
+		{"f", "Refresh files"},
 		{"c or enter", "Convert selected"},
 		{"? or q", "Close / quit"},
 	}

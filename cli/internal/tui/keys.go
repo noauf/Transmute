@@ -4,21 +4,22 @@ import "github.com/charmbracelet/bubbles/key"
 
 // KeyMap defines key bindings for the TUI.
 type KeyMap struct {
-	Up           key.Binding
-	Down         key.Binding
-	Left         key.Binding
-	Right        key.Binding
-	Enter        key.Binding
-	Space        key.Binding
-	Tab          key.Binding
-	Delete       key.Binding
-	SelectAll    key.Binding
-	Convert      key.Binding
-	Quit         key.Binding
-	Help         key.Binding
-	Back         key.Binding
-	Preview      key.Binding
-	DeleteOutput key.Binding
+	Up        key.Binding
+	Down      key.Binding
+	Left      key.Binding
+	Right     key.Binding
+	Enter     key.Binding
+	Space     key.Binding
+	Tab       key.Binding
+	Delete    key.Binding
+	SelectAll key.Binding
+	Convert   key.Binding
+	Quit      key.Binding
+	Help      key.Binding
+	Back      key.Binding
+	Preview   key.Binding
+	Reset     key.Binding
+	Refresh   key.Binding
 }
 
 // DefaultKeyMap returns the default key bindings.
@@ -80,9 +81,13 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("p"),
 			key.WithHelp("p", "preview file"),
 		),
-		DeleteOutput: key.NewBinding(
-			key.WithKeys("x"),
-			key.WithHelp("x", "delete output"),
+		Reset: key.NewBinding(
+			key.WithKeys("r"),
+			key.WithHelp("r", "reset to idle"),
+		),
+		Refresh: key.NewBinding(
+			key.WithKeys("f"),
+			key.WithHelp("f", "refresh files"),
 		),
 	}
 }

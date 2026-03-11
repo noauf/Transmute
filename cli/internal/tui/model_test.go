@@ -113,15 +113,15 @@ func TestDeleteOutput(t *testing.T) {
 		t.Fatalf("expected done, got %s", m.files[0].status)
 	}
 
-	// Test pressing 'x' to delete the output and reset to idle
-	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	// Test pressing 'r' to reset the done file back to idle
+	newModel, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
 	m = newModel.(Model)
 
 	if m.files[0].status != "idle" {
-		t.Fatalf("expected 'idle' status after pressing x, got '%s'", m.files[0].status)
+		t.Fatalf("expected 'idle' status after pressing r, got '%s'", m.files[0].status)
 	}
 
-	t.Log("Delete output works: file removed from disk, status reset to 'idle'")
+	t.Log("Reset works: status reset from done back to 'idle'")
 }
 
 func TestViewRendersDuringConversion(t *testing.T) {
