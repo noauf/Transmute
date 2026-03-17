@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import Link from 'next/link';
-import { DropZone } from '@/components/DropZone';
-import { FileRow } from '@/components/FileRow';
-import { PreviewModal } from '@/components/PreviewModal';
-import { useFileUpload } from '@/hooks/useFileUpload';
-import { useConversion } from '@/hooks/useConversion';
-import { formatFileSize } from '@/lib/utils';
-import { UploadedFile } from '@/types';
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
+import { DropZone } from "@/components/DropZone";
+import { FileRow } from "@/components/FileRow";
+import { PreviewModal } from "@/components/PreviewModal";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import { useConversion } from "@/hooks/useConversion";
+import { formatFileSize } from "@/lib/utils";
+import { UploadedFile } from "@/types";
 
 /* Number of ghost rows to show below real files */
 const MIN_VISIBLE_ROWS = 8;
@@ -31,20 +31,17 @@ export default function ConvertPage() {
     clearAll,
   } = useFileUpload();
 
-  const {
-    isConverting,
-    convertAll,
-    downloadFile,
-    downloadAllAsZip,
-  } = useConversion(updateFile);
+  const { isConverting, convertAll, downloadFile, downloadAllAsZip } =
+    useConversion(updateFile);
 
   const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
 
   const hasFiles = files.length > 0;
   const convertableCount = files.filter(
-    (f) => f.targetFormat && f.status !== 'done' && f.availableFormats.length > 0
+    (f) =>
+      f.targetFormat && f.status !== "done" && f.availableFormats.length > 0,
   ).length;
-  const completedCount = files.filter((f) => f.status === 'done').length;
+  const completedCount = files.filter((f) => f.status === "done").length;
   const totalSize = files.reduce((acc, f) => acc + f.size, 0);
   const ghostRowCount = Math.max(0, MIN_VISIBLE_ROWS - files.length);
 
@@ -64,9 +61,9 @@ export default function ConvertPage() {
       />
 
       {/* Finder Window — the entire converter lives inside this */}
-      <div className="relative z-10 max-w-[960px] mx-auto px-2 sm:px-6 py-3 sm:py-10">
+      <div className="relative z-10 w-full px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
         <motion.div
-          className="flex flex-col max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-80px)] rounded-xl overflow-hidden shadow-[0_12px_60px_rgba(45,31,20,0.12)] border border-border-soft bg-white"
+          className="flex flex-col min-h-[calc(100vh-24px)] sm:min-h-[calc(100vh-48px)] rounded-xl overflow-hidden shadow-[0_12px_60px_rgba(45,31,20,0.12)] border border-border-soft bg-white"
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] as const }}
@@ -74,7 +71,10 @@ export default function ConvertPage() {
           {/* ─ Title bar ─ */}
           <div className="flex-shrink-0 flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 bg-[#f6f6f6] border-b border-border-soft select-none">
             {/* Traffic lights */}
-            <Link href="/" className="flex items-center gap-[6px] no-underline group/dots">
+            <Link
+              href="/"
+              className="flex items-center gap-[6px] no-underline group/dots"
+            >
               <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57] border border-[#e0443e]/40 group-hover/dots:bg-[#ff3b30] transition-colors" />
               <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e] border border-[#dea123]/40 group-hover/dots:bg-[#ff9500] transition-colors" />
               <div className="w-[11px] h-[11px] rounded-full bg-[#28c840] border border-[#1aab29]/40 group-hover/dots:bg-[#28cd41] transition-colors" />
@@ -82,11 +82,32 @@ export default function ConvertPage() {
 
             {/* Navigation arrows — hidden on mobile */}
             <div className="hidden sm:flex items-center gap-1 ml-1">
-              <Link href="/" className="text-text-light/40 hover:text-text-mid transition-colors no-underline">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+              <Link
+                href="/"
+                className="text-text-light/40 hover:text-text-mid transition-colors no-underline"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
               </Link>
               <div className="text-text-light/25">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
               </div>
             </div>
 
@@ -94,9 +115,15 @@ export default function ConvertPage() {
             <div className="flex-1 flex items-center justify-center gap-1.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo.png" alt="" className="w-4 h-4 rounded-[4px]" />
-              <span className="text-[12px] font-medium text-text-mid hidden sm:inline">Transmute</span>
-              <span className="text-[12px] text-text-light/40 hidden sm:inline">{'\u203A'}</span>
-              <span className="text-[12px] font-medium text-text-dark">Converter</span>
+              <span className="text-[12px] font-medium text-text-mid hidden sm:inline">
+                Transmute
+              </span>
+              <span className="text-[12px] text-text-light/40 hidden sm:inline">
+                {"\u203A"}
+              </span>
+              <span className="text-[12px] font-medium text-text-dark">
+                Converter
+              </span>
             </div>
 
             {/* Right side — version + add files button */}
@@ -110,7 +137,15 @@ export default function ConvertPage() {
                   onClick={openFilePicker}
                   title="Add files"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  >
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                 </button>
@@ -123,7 +158,8 @@ export default function ConvertPage() {
             <div className="flex-shrink-0 flex items-center justify-between px-3 sm:px-4 py-1.5 sm:py-2 bg-[#fafafa] border-b border-border-soft">
               <div className="flex items-center gap-2 sm:gap-3">
                 <span className="font-mono text-[11px] text-text-mid">
-                  <strong className="text-text-dark">{files.length}</strong> file{files.length !== 1 ? 's' : ''}
+                  <strong className="text-text-dark">{files.length}</strong>{" "}
+                  file{files.length !== 1 ? "s" : ""}
                 </span>
                 <div className="w-px h-3.5 bg-border-soft" />
                 <span className="font-mono text-[11px] text-text-mid">
@@ -133,7 +169,8 @@ export default function ConvertPage() {
                   <span className="hidden sm:flex items-center gap-1 font-mono text-[11px] text-text-mid">
                     <div className="w-px h-3.5 bg-border-soft mr-1" />
                     <div className="w-1.5 h-1.5 rounded-full bg-mint" />
-                    <strong className="text-mint">{completedCount}</strong> converted
+                    <strong className="text-mint">{completedCount}</strong>{" "}
+                    converted
                   </span>
                 )}
               </div>
@@ -158,12 +195,11 @@ export default function ConvertPage() {
 
           {/* ─ Content area (scrollable) ─ */}
           <div
-            className="relative flex-1 overflow-y-auto min-h-0"
+            className={`relative flex-1 min-h-0 ${hasFiles ? "overflow-y-auto" : "flex items-center justify-center"}`}
             onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            style={{ minHeight: hasFiles ? undefined : '50vh' }}
           >
             {/* Drop zone (empty state) */}
             {!hasFiles && (
@@ -189,7 +225,15 @@ export default function ConvertPage() {
                 exit={{ opacity: 0 }}
               >
                 <div className="flex items-center gap-2 text-pink font-semibold text-sm">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  >
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                   Drop to add files
@@ -220,7 +264,7 @@ export default function ConvertPage() {
                     {Array.from({ length: ghostRowCount }).map((_, i) => (
                       <div
                         key={`ghost-${i}`}
-                        className={`flex items-center px-3 sm:px-4 py-2.5 ${i === 0 ? 'cursor-pointer hover:bg-[#fafafa] active:bg-[#fafafa] transition-colors' : ''} ${i >= 4 ? 'hidden sm:flex' : ''}`}
+                        className={`flex items-center px-3 sm:px-4 py-2.5 ${i === 0 ? "cursor-pointer hover:bg-[#fafafa] active:bg-[#fafafa] transition-colors" : ""} ${i >= 4 ? "hidden sm:flex" : ""}`}
                         onClick={i === 0 ? openFilePicker : undefined}
                       >
                         {/* Ghost icon */}
@@ -229,25 +273,49 @@ export default function ConvertPage() {
                         <div className="flex-1 ml-2.5 sm:ml-3">
                           {i === 0 ? (
                             <span className="text-[12px] text-text-light/40 flex items-center gap-1.5">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40">
-                                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                className="opacity-40"
+                              >
+                                <path
+                                  d="M12 5v14M5 12h14"
+                                  strokeLinecap="round"
+                                />
                               </svg>
-                              <span className="hidden sm:inline">Drop files here or click to browse</span>
-                              <span className="sm:hidden">Tap to add files</span>
+                              <span className="hidden sm:inline">
+                                Drop files here or click to browse
+                              </span>
+                              <span className="sm:hidden">
+                                Tap to add files
+                              </span>
                             </span>
                           ) : (
-                            <div className="h-2.5 rounded bg-border-soft/15" style={{ width: `${60 + ((i * 37) % 60)}px` }} />
+                            <div
+                              className="h-2.5 rounded bg-border-soft/15"
+                              style={{ width: `${60 + ((i * 37) % 60)}px` }}
+                            />
                           )}
                         </div>
                         {/* Ghost columns — desktop only */}
                         <div className="w-[72px] hidden sm:block">
-                          {i < 2 && <div className="h-2 w-10 rounded bg-border-soft/10 ml-auto" />}
+                          {i < 2 && (
+                            <div className="h-2 w-10 rounded bg-border-soft/10 ml-auto" />
+                          )}
                         </div>
                         <div className="w-[140px] hidden sm:block">
-                          {i < 2 && <div className="h-2 w-12 rounded bg-border-soft/10 mx-auto" />}
+                          {i < 2 && (
+                            <div className="h-2 w-12 rounded bg-border-soft/10 mx-auto" />
+                          )}
                         </div>
                         <div className="w-[130px] pr-1 hidden sm:block">
-                          {i < 1 && <div className="h-2 w-8 rounded bg-border-soft/10 ml-auto" />}
+                          {i < 1 && (
+                            <div className="h-2 w-8 rounded bg-border-soft/10 ml-auto" />
+                          )}
                         </div>
                       </div>
                     ))}
@@ -267,23 +335,37 @@ export default function ConvertPage() {
                     <motion.div
                       className="w-3 h-3 rounded-full border-[1.5px] border-pink border-t-transparent flex-shrink-0"
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
+                      transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
                     />
-                    <span className="text-[11px] font-mono text-pink font-medium truncate">Converting...</span>
+                    <span className="text-[11px] font-mono text-pink font-medium truncate">
+                      Converting...
+                    </span>
                   </>
                 ) : completedCount === files.length && completedCount > 0 ? (
                   <>
                     <div className="w-1.5 h-1.5 rounded-full bg-mint flex-shrink-0" />
-                    <span className="text-[11px] font-mono text-mint font-medium truncate">All done</span>
+                    <span className="text-[11px] font-mono text-mint font-medium truncate">
+                      All done
+                    </span>
                   </>
                 ) : (
                   <span className="text-[11px] text-text-light font-mono truncate">
                     {convertableCount > 0 ? (
                       <>
-                        <span className="hidden sm:inline">{convertableCount} ready to convert</span>
-                        <span className="sm:hidden">{convertableCount} ready</span>
+                        <span className="hidden sm:inline">
+                          {convertableCount} ready to convert
+                        </span>
+                        <span className="sm:hidden">
+                          {convertableCount} ready
+                        </span>
                       </>
-                    ) : 'Select formats'}
+                    ) : (
+                      "Select formats"
+                    )}
                   </span>
                 )}
               </div>
@@ -297,7 +379,14 @@ export default function ConvertPage() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                   >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                     </svg>
                     ZIP
@@ -305,13 +394,21 @@ export default function ConvertPage() {
                 )}
 
                 <button
-                  className={`inline-flex items-center gap-1 sm:gap-1.5 px-3.5 sm:px-5 py-1.5 text-[11px] sm:text-[12px] font-bold text-white bg-pink border-none rounded-lg cursor-pointer shadow-[0_2px_12px_rgba(244,114,182,0.25)] hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(244,114,182,0.35)] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none ${isConverting ? 'animate-pulse-soft opacity-85' : ''}`}
+                  className={`inline-flex items-center gap-1 sm:gap-1.5 px-3.5 sm:px-5 py-1.5 text-[11px] sm:text-[12px] font-bold text-white bg-pink border-none rounded-lg cursor-pointer shadow-[0_2px_12px_rgba(244,114,182,0.25)] hover:-translate-y-0.5 hover:shadow-[0_4px_18px_rgba(244,114,182,0.35)] transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none ${isConverting ? "animate-pulse-soft opacity-85" : ""}`}
                   onClick={() => convertAll(files)}
                   disabled={isConverting || convertableCount === 0}
                 >
                   {isConverting ? (
                     <>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="animate-spin"
+                      >
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                       </svg>
                       <span className="hidden sm:inline">Converting...</span>
@@ -319,10 +416,22 @@ export default function ConvertPage() {
                     </>
                   ) : (
                     <>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path
+                          d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
-                      Transmute{convertableCount > 0 ? ` (${convertableCount})` : ''}
+                      Transmute
+                      {convertableCount > 0 ? ` (${convertableCount})` : ""}
                     </>
                   )}
                 </button>
