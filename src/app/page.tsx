@@ -717,6 +717,89 @@ function TUIFileRows() {
   );
 }
 
+/* ─── Install Box Component ─── */
+
+function InstallBox() {
+  const [os, setOs] = useState<'unix' | 'windows'>('unix');
+  const [copied, setCopied] = useState(false);
+
+  const commands = {
+    unix: 'curl -fsSL https://raw.githubusercontent.com/noauf/Transmute/main/install.sh | sh',
+    windows: 'irm https://raw.githubusercontent.com/noauf/Transmute/main/install.ps1 | iex',
+  };
+
+  const prompt = os === 'unix' ? '$' : 'PS>';
+  const promptColor = os === 'unix' ? '#34d399' : '#60a5fa';
+  const command = commands[os];
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(command).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="mt-6 rounded-xl overflow-hidden border border-[#2d2d2d] bg-[#1a1a1a]">
+      {/* Tab bar */}
+      <div className="flex items-center gap-0 border-b border-[#2d2d2d] px-1 pt-1">
+        <button
+          onClick={() => setOs('unix')}
+          className={`px-4 py-1.5 text-[12px] font-mono font-semibold rounded-t-lg transition-colors ${
+            os === 'unix'
+              ? 'bg-[#2a2a2a] text-[#e2e2e2]'
+              : 'text-[#666] hover:text-[#999]'
+          }`}
+        >
+          Linux / macOS
+        </button>
+        <button
+          onClick={() => setOs('windows')}
+          className={`px-4 py-1.5 text-[12px] font-mono font-semibold rounded-t-lg transition-colors ${
+            os === 'windows'
+              ? 'bg-[#2a2a2a] text-[#e2e2e2]'
+              : 'text-[#666] hover:text-[#999]'
+          }`}
+        >
+          Windows
+        </button>
+      </div>
+
+      {/* Command line */}
+      <div className="flex items-center gap-3 px-4 py-3 font-mono text-[13px]">
+        <span className="select-none font-bold flex-shrink-0" style={{ color: promptColor }}>{prompt}</span>
+        <span className="text-[#e2e2e2] break-all flex-1">{command}</span>
+        <button
+          onClick={handleCopy}
+          title="Copy to clipboard"
+          className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+          style={{
+            background: copied ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.06)',
+            color: copied ? '#34d399' : '#888',
+          }}
+        >
+          {copied ? (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Copied
+            </>
+          ) : (
+            <>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+              </svg>
+              Copy
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Page ─── */
 
 export default function LandingPage() {
@@ -1077,12 +1160,7 @@ export default function LandingPage() {
           </div>
 
           {/* Install command below the TUI */}
-          <div className="mt-6 rounded-xl overflow-hidden border border-[#2d2d2d] bg-[#1a1a1a]">
-            <div className="flex items-center gap-3 px-4 py-3 font-mono text-[13px]">
-              <span className="text-[#34d399] select-none font-bold">$</span>
-              <span className="text-[#e2e2e2] break-all">curl -fsSL <span className="text-[#60a5fa]">https://raw.githubusercontent.com/noauf/Transmute/main/install.sh</span> | <span className="text-[#fb923c]">sh</span></span>
-            </div>
-          </div>
+          <InstallBox />
         </motion.div>
 
         {/* CLI feature bullets */}
