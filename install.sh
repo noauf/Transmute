@@ -11,7 +11,15 @@ OS="$(uname -s)"
 case "$OS" in
   Darwin)  OS="darwin" ;;
   Linux)   OS="linux" ;;
-  MINGW*|MSYS*|CYGWIN*) OS="windows" ;;
+  MINGW*|MSYS*|CYGWIN*)
+    echo ""
+    echo "  Windows detected."
+    echo "  Please use the PowerShell installer instead:"
+    echo ""
+    echo "    irm https://raw.githubusercontent.com/noauf/Transmute/main/install.ps1 | iex"
+    echo ""
+    exit 0
+    ;;
   *)
     echo "Error: unsupported operating system: $OS"
     exit 1
